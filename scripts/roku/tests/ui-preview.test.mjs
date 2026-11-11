@@ -20,12 +20,14 @@ async function servers(t) {
   let deny = false;
   let empty = false;
   let failFavorite = false;
+  let catalogSource = 'live';
   const api = createServer(async (req, res) => {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     seen.push({ path: req.url, method: req.method, authorization: req.headers.authorization, body: Buffer.concat(chunks).toString() });
     res.setHeader('content-type', 'application/json');
     if (req.url === '/v1/preview/catalog') return res.end(JSON.stringify(fixture));
+    if (req.url === '/v1/health') return res.end(JSON.stringify({ catalogSource }));
     if (req.url === '/v1/devices/pair') return res.end(JSON.stringify({ credential: 'a'.repeat(43), deviceId: '01234567-0123-0123-0123-0123456789ab' }));
     if (req.headers.authorization !== `Bearer ${'a'.repeat(43)}` || deny) return res.writeHead(401).end('{}');
     if (req.url === '/v1/household/favorites') return res.writeHead(failFavorite ? 502 : 204).end();
@@ -44,6 +46,7 @@ async function servers(t) {
     base: `http://127.0.0.1:${preview.address().port}`, seen,
     deny: () => { deny = true; }, empty: () => { empty = true; },
     failFavorite: (value) => { failFavorite = value; },
+    mock: () => { catalogSource = 'mock'; },
   };
 }
 
@@ -69,7 +72,7 @@ test('preview forwards only the permitted API routes and protects local pairing 
 });
 
 test('preview renders samples, pairs for real titles, writes real favorites and shows revoked access', async (t) => {
-  const { base, seen, deny, empty, failFavorite } = await servers(t);
+  const { base, seen, deny, empty, failFavorite, mock } = await servers(t);
   const script = await readFile(new URL('../../../apps/roku-preview/app.js', import.meta.url), 'utf8');
   const elements = Object.fromEntries(['primary-nav', 'screen-content', 'overlay-root', 'screen-kicker', 'source-status', 'pairing-code', 'pairing-error']
     .map((id) => [id, { innerHTML: '', textContent: '', value: '', querySelector: () => ({ focus() {} }) }]));
@@ -101,6 +104,10 @@ test('preview renders samples, pairs for real titles, writes real favorites and 
   assert.match(elements['screen-content'].innerHTML, /Sample titles · simulated/);
   assert.match(elements['screen-content'].innerHTML, /Runtime unavailable/);
   assert.equal(elements['source-status'].textContent, 'JELLYFIN + API SAMPLES');
+  mock();
+  click('retry-catalog');
+  await waitFor(() => elements['source-status'].textContent === 'MOCK JELLYFIN + API SAMPLES');
+  assert.match(elements['screen-content'].innerHTML, /MOCK JELLYFIN · SIMULATED/);
   click('favorite', { id: 'real-real1' });
   await waitFor(() => seen.some((entry) => entry.path === '/v1/household/favorites'));
   const favorite = seen.find((entry) => entry.path === '/v1/household/favorites');

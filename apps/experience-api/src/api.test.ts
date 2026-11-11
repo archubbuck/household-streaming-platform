@@ -12,6 +12,7 @@ import { NestFactory } from '@nestjs/core';
 import { appModule } from './app.js';
 import { DeviceStore } from './devices.js';
 import { Jellyfin } from './jellyfin.js';
+import { createMockJellyfin, jellyfinMode } from './mock-jellyfin.js';
 
 test('pairing is expiring, single-use, durable and revocable', (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'household-device-test-'));
@@ -52,6 +53,7 @@ test('default database is created on server launch and shared with the device CL
   const env = {
     ...process.env, HOME: home, USERPROFILE: home,
     HOUSEHOLD_DEVICE_DB: join(home, 'ignored.sqlite'),
+    HOUSEHOLD_JELLYFIN_MODE: 'live',
     JELLYFIN_BASE_URL: '', JELLYFIN_API_KEY: '', JELLYFIN_HOUSEHOLD_USER_ID: '',
   };
   const listener = createServer();
@@ -132,6 +134,56 @@ test('default database initialization rejects an existing symlinked directory', 
   }));
 });
 
+test('API process defaults to mock mode and serves paired catalog requests', async (t) => {
+  const home = mkdtempSync(join(tmpdir(), 'household-mock-home-'));
+  const listener = createServer();
+  await new Promise<void>((resolve) => listener.listen(0, '127.0.0.1', resolve));
+  const address = listener.address();
+  assert.ok(address && typeof address !== 'string');
+  await new Promise<void>((resolve, reject) => listener.close((error) => error ? reject(error) : resolve()));
+  const env = {
+    ...process.env, HOME: home, USERPROFILE: home,
+    HOUSEHOLD_JELLYFIN_MODE: undefined, HOUSEHOLD_API_PORT: String(address.port),
+    JELLYFIN_BASE_URL: '', JELLYFIN_API_KEY: '', JELLYFIN_HOUSEHOLD_USER_ID: '',
+  };
+  const main = fileURLToPath(new URL('./main.js', import.meta.url));
+  const cli = fileURLToPath(new URL('./device-cli.js', import.meta.url));
+  const child = spawn(process.execPath, [main], { env, stdio: 'ignore' });
+  const exited = new Promise<void>((resolve) => child.once('exit', () => resolve()));
+  t.after(async () => {
+    if (child.exitCode === null && child.signalCode === null) child.kill();
+    await exited;
+    rmSync(home, { recursive: true, force: true });
+  });
+  const base = `http://127.0.0.1:${address.port}`;
+  let ready = false;
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (child.exitCode !== null || child.signalCode !== null) break;
+    try {
+      const response = await fetch(`${base}/v1/health`, { signal: AbortSignal.timeout(200) });
+      if (response.ok) {
+        const health = await response.json() as { catalogSource: string };
+        assert.equal(health.catalogSource, 'mock');
+        ready = true;
+        break;
+      }
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+  assert.equal(ready, true, 'Mock API did not start');
+  const code = execFileSync(process.execPath, [cli, 'pair-code'], { env, encoding: 'utf8' }).trim();
+  const paired = await fetch(`${base}/v1/devices/pair`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }),
+  });
+  assert.equal(paired.status, 200);
+  const device = await paired.json() as { credential: string };
+  const catalog = await fetch(`${base}/v1/catalog/movies`, { headers: { authorization: `Bearer ${device.credential}` } });
+  assert.equal(catalog.status, 200);
+  const movies = await catalog.json() as { id: string }[];
+  assert.equal(movies[0].id, 'mock-film-1');
+});
+
 test('HTTP routes enforce pairing, validate inputs and fail closed without Jellyfin', async (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'household-api-test-'));
   const store = new DeviceStore(join(directory, 'devices.sqlite'));
@@ -160,6 +212,68 @@ test('HTTP routes enforce pairing, validate inputs and fail closed without Jelly
   assert.equal((await fetch(`${base}/v1/household/favorites`, { method: 'POST', headers, body: JSON.stringify({ id: 'id', favorite: 'yes' }) })).status, 400);
   store.revoke(deviceId);
   assert.equal((await fetch(`${base}/v1/home`, { headers })).status, 401);
+});
+
+test('mock uses the real adapter and authenticated routes with temporary favorites', async (t) => {
+  assert.equal(jellyfinMode({}), 'mock');
+  assert.equal(jellyfinMode({ HOUSEHOLD_JELLYFIN_MODE: 'mock' }), 'mock');
+  assert.equal(jellyfinMode({ HOUSEHOLD_JELLYFIN_MODE: 'live', JELLYFIN_BASE_URL: 'http://localhost' }), 'live');
+  assert.throws(() => jellyfinMode({ HOUSEHOLD_JELLYFIN_MODE: 'typo' }), /must be live or mock/);
+  assert.throws(() => jellyfinMode({ HOUSEHOLD_JELLYFIN_MODE: 'mock', JELLYFIN_BASE_URL: 'http://localhost' }), /cannot be combined/);
+  assert.throws(() => jellyfinMode({ JELLYFIN_API_KEY: 'example' }), /HOUSEHOLD_JELLYFIN_MODE=live/);
+  const mock = await createMockJellyfin();
+  const directory = mkdtempSync(join(tmpdir(), 'household-mock-api-'));
+  const store = new DeviceStore(join(directory, 'devices.sqlite'));
+  const app = await NestFactory.create(appModule(store, mock.jellyfin, 'mock'), { logger: false });
+  await app.listen(0, '127.0.0.1');
+  t.after(async () => {
+    await app.close();
+    await new Promise<void>((resolve, reject) => mock.server.close((error) => error ? reject(error) : resolve()));
+    store.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+  const address = mock.server.address();
+  assert.ok(address && typeof address !== 'string');
+  assert.equal((await fetch(`http://127.0.0.1:${address.port}/Items`)).status, 401);
+  const base = await app.getUrl();
+  const health = await (await fetch(`${base}/v1/health`)).json() as { catalogSource: string; jellyfinConfigured: boolean };
+  assert.equal(health.catalogSource, 'mock');
+  assert.equal(health.jellyfinConfigured, true);
+  assert.equal((await fetch(`${base}/v1/catalog/movies`)).status, 401);
+  const pairResponse = await fetch(`${base}/v1/devices/pair`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ code: store.createPairingCode() }),
+  });
+  const pair = await pairResponse.json() as { credential: string };
+  const headers = { authorization: `Bearer ${pair.credential}`, 'content-type': 'application/json' };
+  const movies = await (await fetch(`${base}/v1/catalog/movies?genre=Adventure`, { headers })).json() as { id: string; isFavorite: boolean }[];
+  assert.deepEqual(movies.map((item) => item.id), ['mock-film-1']);
+  const series = await (await fetch(`${base}/v1/catalog/series`, { headers })).json() as { id: string }[];
+  assert.equal(series[0].id, 'mock-series-1');
+  const episodes = await (await fetch(`${base}/v1/series/mock-series-1/episodes`, { headers })).json() as { seasons: { episodes: unknown[] }[] };
+  assert.equal(episodes.seasons[0].episodes.length, 2);
+  const search = await (await fetch(`${base}/v1/catalog/search?q=First`, { headers })).json() as { id: string }[];
+  assert.equal(search[0].id, 'mock-episode-1');
+  assert.equal((await fetch(`${base}/v1/catalog/missing`, { headers })).status, 404);
+  assert.equal((await fetch(`${base}/v1/household/favorites`, {
+    method: 'POST', headers, body: JSON.stringify({ id: 'mock-film-1', favorite: true }),
+  })).status, 204);
+  const detail = await (await fetch(`${base}/v1/catalog/mock-film-1`, { headers })).json() as { item: { isFavorite: boolean }; related: unknown[] };
+  assert.equal(detail.item.isFavorite, true);
+  assert.equal(detail.related.length, 1);
+  assert.equal((await fetch(`${base}/v1/household/favorites`, {
+    method: 'POST', headers, body: JSON.stringify({ id: 'mock-film-1', favorite: false }),
+  })).status, 204);
+  assert.equal((await mock.jellyfin.item('mock-film-1')).isFavorite, false);
+  assert.equal((await fetch(`${base}/v1/playback/sessions`, { method: 'POST', headers })).status, 501);
+  await mock.jellyfin.favorite('mock-film-1', true);
+  const second = await createMockJellyfin();
+  try {
+    assert.equal((await mock.jellyfin.item('mock-film-1')).isFavorite, true);
+    assert.equal((await second.jellyfin.item('mock-film-1')).isFavorite, false);
+  } finally {
+    await new Promise<void>((resolve, reject) => second.server.close((error) => error ? reject(error) : resolve()));
+  }
 });
 
 test('Jellyfin adapter sends a scoped request and propagates upstream failures', async (t) => {

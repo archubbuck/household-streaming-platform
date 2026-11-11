@@ -28,7 +28,7 @@ export function createPreviewServer({ host = '127.0.0.1', port = 4173, apiPort =
       return;
     }
     if (pathname.startsWith('/v1/')) {
-      const readPaths = ['/v1/preview/catalog', '/v1/home', '/v1/catalog/movies', '/v1/catalog/series'];
+      const readPaths = ['/v1/health', '/v1/preview/catalog', '/v1/home', '/v1/catalog/movies', '/v1/catalog/series'];
       const writePaths = ['/v1/devices/pair', '/v1/household/favorites'];
       const isRead = readPaths.includes(pathname) && request.method === 'GET';
       const isWrite = writePaths.includes(pathname) && request.method === 'POST';

@@ -307,7 +307,7 @@ function validateCatalog(catalog) {
     catalog.favorites.every((id) => ids.has(id));
 }
 
-function realItem(item) {
+function realItem(item, source) {
   if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !/^[a-zA-Z0-9-]{1,128}$/.test(item.id) ||
       typeof item.title !== 'string' || !item.title || !['movie', 'series'].includes(item.type) ||
       typeof item.isFavorite !== 'boolean' || typeof item.isPlayable !== 'boolean' ||
@@ -319,8 +319,8 @@ function realItem(item) {
   return {
     id: `real-${item.id}`, apiId: item.id, source: 'jellyfin', title: item.title,
     type: item.type === 'movie' ? 'Movie' : 'Show', year: item.year,
-    runtime: 'Runtime unavailable', genre: 'Jellyfin', image: '',
-    description: item.overview || 'Description unavailable.', eyebrow: 'JELLYFIN LIBRARY',
+    runtime: 'Runtime unavailable', genre: source === 'mock' ? 'Mock Jellyfin' : 'Jellyfin', image: '',
+    description: item.overview || 'Description unavailable.', eyebrow: source === 'mock' ? 'MOCK JELLYFIN · SIMULATED' : 'JELLYFIN LIBRARY',
     isFavorite: item.isFavorite, progressPercent: item.progressPercent,
   };
 }
@@ -342,14 +342,17 @@ async function loadCatalog() {
     const samples = catalog.titles.map((item) => ({ ...item, id: `sample-${item.id}`, source: 'fixture' }));
     const sampleFeatured = { ...catalog.featured, id: `sample-${catalog.featured.id}`, source: 'fixture', eyebrow: 'SAMPLE · SIMULATED' };
     let realTitles = [];
+    let source = 'live';
     if (activeCredential) {
       const options = { headers: { authorization: `Bearer ${activeCredential}` } };
-      const [movies, series] = await Promise.all([
-        apiJson('/v1/catalog/movies', options), apiJson('/v1/catalog/series', options),
+      const [movies, series, health] = await Promise.all([
+        apiJson('/v1/catalog/movies', options), apiJson('/v1/catalog/series', options), apiJson('/v1/health'),
       ]);
+      if (!health || !['live', 'mock'].includes(health.catalogSource)) throw new Error('Invalid API catalog source');
+      source = health.catalogSource;
       if (!Array.isArray(movies) || !Array.isArray(series)) throw new Error('Invalid Jellyfin catalog response');
       if (movies.some((item) => item?.type !== 'movie') || series.some((item) => item?.type !== 'series')) throw new Error('Invalid Jellyfin catalog type');
-      realTitles = [...movies, ...series].map(realItem);
+      realTitles = [...movies, ...series].map((item) => realItem(item, source));
       if (new Set(realTitles.map((item) => item.id)).size !== realTitles.length) throw new Error('Duplicate Jellyfin catalog item');
     }
     if (generation !== loadGeneration) return;
@@ -363,7 +366,7 @@ async function loadCatalog() {
     favorites.clear();
     initialFavorites.forEach((id) => favorites.add(id));
     realTitles.forEach((item) => { if (item.isFavorite) favorites.add(item.id); });
-    document.querySelector('#source-status').textContent = credential ? 'JELLYFIN + API SAMPLES' : 'API SAMPLES';
+    document.querySelector('#source-status').textContent = credential ? (source === 'mock' ? 'MOCK JELLYFIN + API SAMPLES' : 'JELLYFIN + API SAMPLES') : 'API SAMPLES';
     catalogReady = true;
     renderScreen();
   } catch (error) {

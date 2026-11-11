@@ -32,7 +32,7 @@ themselves; the application does not currently enforce Windows ACLs. Back up
 the database securely. Pairing codes and bearer credentials are stored only as
 SHA-256 digests; loss of this database invalidates paired devices.
 
-Set `JELLYFIN_BASE_URL`, `JELLYFIN_API_KEY`, and
+For a real server, set `HOUSEHOLD_JELLYFIN_MODE=live`, `JELLYFIN_BASE_URL`, `JELLYFIN_API_KEY`, and
 `JELLYFIN_HOUSEHOLD_USER_ID` as environment variables outside Git. The process
 does not automatically load `.env`. Use a scoped service credential where
 supported; never put it in a Roku client. Cleartext Jellyfin URLs are accepted
@@ -64,7 +64,7 @@ response schemas and error contracts are not yet complete.
 
 | Route | Current behavior |
 |---|---|
-| `GET /v1/health` | Process liveness and whether Jellyfin is configured; connectivity is not checked. |
+| `GET /v1/health` | Process liveness, configuration status, and `catalogSource` (`live` or `mock`); connectivity is not checked. |
 | `GET /v1/preview/catalog` | Unauthenticated, explicitly marked sample catalog for the local browser preview; not real media or a production contract. |
 | `GET /v1/home` | Recently added playable movies with media sources. |
 | `GET /v1/catalog/movies`, `/v1/catalog/series` | First 100 entries; optional `genre`, `sort` (`SortName`, `DateCreated`, `ProductionYear`) and `order` (`Ascending`, `Descending`). Pagination is not yet implemented. |
@@ -93,10 +93,28 @@ and keeps the bearer credential only in browser memory. Reloading or closing
 the tab discards it but does not revoke the device; the profile displays its
 device ID for the local revoke command. A new connection requires a new code.
 
-The preview loads API sample data without pairing; after pairing it loads real
-movies and series from the authenticated catalog and shows samples separately.
+The preview loads API sample data without pairing; after pairing it loads
+movies and series from the authenticated mock or live catalog and shows samples separately.
 No failed authenticated request falls back to samples. Search is local to the
 loaded entries. Real favorite changes go to the API; sample favorites and all
 playback are simulations. Missing artwork, runtime and genre are not filled
 with invented details about a real title. Catalog pagination, real playback
 and live Jellyfin validation remain outstanding.
+
+## Offline mock Jellyfin
+
+Mock mode is the default when `HOUSEHOLD_JELLYFIN_MODE` is unset; it can also
+be explicitly set to `mock`. Unset `JELLYFIN_BASE_URL`, `JELLYFIN_API_KEY`,
+and `JELLYFIN_HOUSEHOLD_USER_ID` for the API process: mock mode rejects
+nonempty real connection settings. To use a real server, explicitly set
+`HOUSEHOLD_JELLYFIN_MODE=live` along with the connection settings. Live mode
+never falls back to the mock if Jellyfin is missing or fails.
+
+Mock mode starts an ephemeral loopback-only fake upstream with a synthetic
+catalog; the existing Jellyfin HTTP adapter, device pairing, authorization and
+API routes remain in the path. Generate a pairing code using the usual device
+CLI and connect in the preview. Movies, series, episodes, search, details and
+favorites are simulated; favorites are shared in memory until the API exits.
+No media files exist, and playback routes still return 501. The preview
+identifies the upstream as mock. This mock is not a full Jellyfin implementation
+and does not establish compatibility with a real server.

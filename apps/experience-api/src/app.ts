@@ -10,6 +10,7 @@ import { fixtureCatalog } from './preview-fixtures.js';
 
 const DEVICES = Symbol('devices');
 const JELLYFIN = Symbol('jellyfin');
+const SOURCE = Symbol('catalog-source');
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -59,12 +60,13 @@ class DeviceGuard implements CanActivate {
 @ApiTags('health')
 @Controller('v1')
 class PublicController {
-  constructor(@Inject(DEVICES) private readonly devices: DeviceStore, @Inject(JELLYFIN) private readonly jellyfin: Jellyfin) {}
+  constructor(@Inject(DEVICES) private readonly devices: DeviceStore, @Inject(JELLYFIN) private readonly jellyfin: Jellyfin,
+    @Inject(SOURCE) private readonly source: 'live' | 'mock') {}
 
   @Get('health')
   @ApiOperation({ summary: 'Liveness and configuration status, not an upstream connectivity check' })
   health() {
-    return { status: 'ok', jellyfinConfigured: this.jellyfin.configured(), jellyfinConnectivity: 'not_checked' };
+    return { status: 'ok', jellyfinConfigured: this.jellyfin.configured(), jellyfinConnectivity: 'not_checked', catalogSource: this.source };
   }
 
   @Get('preview/catalog')
@@ -144,10 +146,13 @@ class CatalogController {
   stop() { return unavailable(); }
 }
 
-export function appModule(devices: DeviceStore, jellyfin: Jellyfin) {
+export function appModule(devices: DeviceStore, jellyfin: Jellyfin, source: 'live' | 'mock' = 'live', shutdown?: () => Promise<void>) {
   @Module({
     controllers: [PublicController, CatalogController],
-    providers: [DeviceGuard, { provide: DEVICES, useValue: devices }, { provide: JELLYFIN, useValue: jellyfin }],
+    providers: [
+      DeviceGuard, { provide: DEVICES, useValue: devices }, { provide: JELLYFIN, useValue: jellyfin },
+      { provide: SOURCE, useValue: source }, { provide: 'upstream-lifecycle', useValue: { onApplicationShutdown: shutdown ?? (() => {}) } },
+    ],
   })
   class AppModule {}
   return AppModule;

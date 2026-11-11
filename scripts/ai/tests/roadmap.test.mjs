@@ -22,7 +22,7 @@ function fixture(t) {
     '.agents/templates/task-brief.md', 'docs/development/third-party-notices.md', '.agents/workflows/foundation-check.json',
     'docs/development/roku-mcp-gap-analysis.md', 'docs/adr/0002-roku-mcp-inspection.md', 'docs/operations/roku-mcp.md', 'apps/roku-preview/app.js',
     'apps/experience-api/src/preview-fixtures.ts', 'scripts/roku/tests/ui-preview.test.mjs',
-    'apps/experience-api/src/app.ts', 'apps/experience-api/src/jellyfin.ts', 'apps/experience-api/src/devices.ts', 'apps/experience-api/src/api.test.ts',
+    'apps/experience-api/src/app.ts', 'apps/experience-api/src/jellyfin.ts', 'apps/experience-api/src/mock-jellyfin.ts', 'apps/experience-api/src/devices.ts', 'apps/experience-api/src/api.test.ts',
     '.vscode/mcp.json', '.mcp.json']) {
     const target = path.join(root, item);
     mkdirSync(path.dirname(target), { recursive: true });

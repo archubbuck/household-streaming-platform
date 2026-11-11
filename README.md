@@ -78,16 +78,21 @@ with `pnpm --filter @household/experience-api start`, then run
 services bind to loopback; the preview proxies a narrow set of requests to the
 API. If `HOUSEHOLD_API_PORT` is changed, set it for both processes.
 
-The API serves explicitly labeled sample titles without pairing or Jellyfin
-configuration. To browse a configured Jellyfin library, use **Connect Jellyfin**
-and an owner-generated pairing code as described in
-[docs/api/experience-api.md](docs/api/experience-api.md). Real favorites update
-Jellyfin; sample favorites are temporary. Samples appear separately from real
-titles, and missing real artwork and metadata are not fabricated. API errors
-are shown rather than silently replaced with samples. The browser holds the
-device credential only in memory; reload requires a new pairing code, and
-disconnecting does not revoke the device. Playback remains simulated. Do not
-deploy or expose this development preview as a household service.
+The API defaults to a private, in-memory mock Jellyfin library; no connection
+settings are required. It also serves sample titles without pairing. To browse
+the mock library, use **Connect Jellyfin** and an owner-generated pairing code
+as described in the [API runbook](docs/api/experience-api.md). The UI labels
+the library **MOCK JELLYFIN**, and its favorites reset on API restart. Preview
+sample artwork uses external URLs and may be unavailable offline.
+
+To connect a real server, explicitly set `HOUSEHOLD_JELLYFIN_MODE=live` and
+provide the Jellyfin connection variables. Mock mode rejects nonempty real
+connection settings. Real favorites update Jellyfin; sample favorites are
+temporary. API errors are shown rather than silently replaced with samples.
+The browser holds the device credential only in memory; reload requires a new
+pairing code, and disconnecting does not revoke the device. Playback remains
+simulated. Do not deploy or expose this development preview as a household
+service.
 
 ## Roadmap
 

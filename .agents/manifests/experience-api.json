@@ -13,6 +13,7 @@
         "apps/experience-api/src/devices.ts",
         "apps/experience-api/src/device-cli.ts",
         "apps/experience-api/src/jellyfin.ts",
+        "apps/experience-api/src/mock-jellyfin.ts",
         "apps/experience-api/src/preview-fixtures.ts",
         "apps/experience-api/src/api.test.ts",
         "apps/experience-api/tsconfig.json",
