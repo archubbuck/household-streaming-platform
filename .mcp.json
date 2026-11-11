@@ -1,14 +1,8 @@
 {
 	"mcpServers": {
 		"roku-sdk-inspection": {
-			"type": "stdio",
 			"command": "node",
-			"args": [
-				"/workspaces/household-streaming-platform/scripts/roku/editor-mcp.mjs"
-			],
-			"tools": [
-				"*"
-			]
+			"args": ["${workspaceFolder}/scripts/roku/editor-mcp.mjs"]
 		}
 	}
 }
