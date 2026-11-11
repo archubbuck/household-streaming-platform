@@ -26,6 +26,8 @@ jobs:
           cache: pnpm
       - name: Install pinned dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build and test Experience API foundation
+        run: pnpm --filter @household/experience-api build && pnpm --filter @household/experience-api test
       - name: Discover, run and independently verify current commit
         shell: pwsh
         run: |

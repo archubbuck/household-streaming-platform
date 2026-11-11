@@ -1,29 +1,11 @@
-const image = (id, width = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=78`;
-
-const titles = [
-  { id: 'orchard', title: 'The Orchard at Dusk', type: 'Movie', year: 2025, runtime: '1h 48m', genre: 'Drama', image: image('photo-1470252649378-9c29740c9fa8'), description: 'A cartographer returns to a valley that no longer appears on any map, and finds the people there have been waiting for her.' },
-  { id: 'northbound', title: 'Northbound', type: 'Show', year: 2024, runtime: '6 episodes', genre: 'Human stories', image: image('photo-1470770841072-f978cf4d019e'), description: 'A winter road, a borrowed car, and a handful of strangers heading toward the same small town.' },
-  { id: 'tideglass', title: 'Tideglass', type: 'Movie', year: 2025, runtime: '1h 36m', genre: 'Mystery', image: image('photo-1518837695005-2083093ee35b'), description: 'After a storm changes the shoreline, a marine biologist discovers a lighthouse still sending a signal.' },
-  { id: 'wild-index', title: 'The Wild Index', type: 'Show', year: 2023, runtime: '8 episodes', genre: 'Nature', image: image('photo-1441974231531-c6227db76b6e'), description: 'Field notes from the forests, wetlands, and quiet edges where wild places meet home.' },
-  { id: 'blue-hour', title: 'Blue Hour, Again', type: 'Movie', year: 2024, runtime: '1h 52m', genre: 'Drama', image: image('photo-1500530855697-b586d89ba3ee'), description: 'Two old friends take the long way back from a wedding and rediscover an unfinished conversation.' },
-  { id: 'deep-winter', title: 'Deep Winter', type: 'Show', year: 2025, runtime: '5 episodes', genre: 'Mystery', image: image('photo-1519681393784-d120267933ba'), description: 'When the observatory loses contact with the valley below, its night crew begins to notice a pattern in the snow.' },
-  { id: 'small-hours', title: 'Small Hours', type: 'Movie', year: 2022, runtime: '1h 41m', genre: 'Drama', image: image('photo-1497366754035-f200968a6e72'), description: 'The night staff of a neighborhood hotel become the keepers of each other’s small, unfinished plans.' },
-  { id: 'long-way-home', title: 'The Long Way Home', type: 'Movie', year: 2023, runtime: '1h 57m', genre: 'Adventure', image: image('photo-1500534623283-312aade485b7'), description: 'A brother and sister follow an old trail across the high country to return something that was never theirs.' },
-  { id: 'glass-harbor', title: 'Glass Harbor', type: 'Movie', year: 2024, runtime: '1h 44m', genre: 'Mystery', image: image('photo-1498623116890-37e912163d5d'), description: 'A radio host receives a nightly weather report from a town erased from the coast years ago.' },
-  { id: 'last-light', title: 'Last Light on the Pass', type: 'Movie', year: 2023, runtime: '1h 51m', genre: 'Adventure', image: image('photo-1464822759023-fed622ff2c3b'), description: 'Two climbers retrace a missing expedition’s route before the first storm closes the mountain.' },
-  { id: 'river-house', title: 'The River House', type: 'Movie', year: 2022, runtime: '1h 39m', genre: 'Drama', image: image('photo-1473448912268-2022ce9509d8'), description: 'Three generations return to a riverside home to decide what should be carried forward.' },
-  { id: 'under-canopy', title: 'Under Canopy', type: 'Show', year: 2025, runtime: '7 episodes', genre: 'Nature', image: image('photo-1448375240586-882707db888b'), description: 'A field team follows the changing life of one forest through a year of seasons and storms.' },
-  { id: 'after-signal', title: 'After the Signal', type: 'Show', year: 2024, runtime: '6 episodes', genre: 'Mystery', image: image('photo-1519608487953-e999c86e7455'), description: 'A remote listening station hears a transmission that should not exist, then hears it answer back.' },
-  { id: 'common-ground', title: 'Common Ground', type: 'Show', year: 2022, runtime: '9 episodes', genre: 'Human stories', image: image('photo-1470252649378-9c29740c9fa8'), description: 'Neighbors on one block find surprising ways to show up for one another.' },
-];
-
-const featured = {
-  ...titles[0],
-  title: 'A Map of the Quiet',
-  eyebrow: 'TONIGHT’S FEATURE',
-  description: 'Some places disappear for a reason. A patient, beautifully observed story about finding your way back.',
-  image: image('photo-1500530855697-b586d89ba3ee', 1600),
-};
+let titles = [];
+let featured;
+let initialFavorites = [];
+let catalogReady = false;
+let credential = null;
+let deviceId = null;
+let sampleTitles = [];
+let loadGeneration = 0;
 
 const navItems = [
   { id: 'home', label: 'Home', icon: '⌂' },
@@ -33,8 +15,8 @@ const navItems = [
   { id: 'saved', label: 'My List', icon: '♡' },
 ];
 
-const progress = new Map([['northbound', 68], ['tideglass', 34], ['deep-winter', 82]]);
-const favorites = new Set(['wild-index']);
+const progress = new Map();
+const favorites = new Set();
 const state = { screen: 'home', selectedTitle: null, isPaused: false, lastScreen: 'home' };
 const navRoot = document.querySelector('#primary-nav');
 const contentRoot = document.querySelector('#screen-content');
@@ -58,13 +40,13 @@ function cardMarkup(title, row, index, { portrait = false } = {}) {
   const percent = progress.get(title.id);
   return `<button class="media-card${portrait ? ' poster-card' : ''}" type="button" data-action="details" data-id="${title.id}" data-row="${row}" data-index="${index}" aria-label="Details for ${escapeText(title.title)}">
     <span class="poster-wrap">
-      <img class="poster-image" src="${title.image}" alt="" loading="lazy">
+      ${title.image ? `<img class="poster-image" src="${escapeText(title.image)}" alt="" loading="lazy">` : ''}
       <span class="poster-shade"></span>
-      <span class="poster-label">${escapeText(title.genre.toUpperCase())}</span>
+      <span class="poster-label">${title.source === 'fixture' ? 'SAMPLE · ' : ''}${escapeText(title.genre.toUpperCase())}</span>
       ${percent ? `<span class="progress-track"><span class="progress-fill" style="width:${percent}%"></span></span>` : ''}
     </span>
     <span class="media-title">${escapeText(title.title)}</span>
-    <span class="media-subtitle">${title.year} <span aria-hidden="true">·</span> ${escapeText(title.type)}</span>
+    <span class="media-subtitle">${escapeText(title.year ?? 'Year unavailable')} <span aria-hidden="true">·</span> ${escapeText(title.type)}</span>
   </button>`;
 }
 
@@ -77,26 +59,28 @@ function railMarkup(title, collection, row, { posterCards = false, screen = 'mov
 }
 
 function renderHome() {
-  const watching = titles.filter((title) => progress.has(title.id));
-  const picks = titles.filter((title) => title.id !== 'orchard' && title.id !== 'northbound').slice(0, 5);
+  const mainTitles = credential ? titles.filter((title) => title.source === 'jellyfin') : sampleTitles;
+  const watching = mainTitles.filter((title) => progress.has(title.id));
+  const picks = mainTitles.filter((title) => title.id !== featured.id).slice(0, 5);
   contentRoot.innerHTML = `<div class="home-view">
     <section class="hero" aria-label="Featured title">
-      <img class="hero-image" src="${featured.image}" alt="Sunlit hills under a broad evening sky">
+      ${featured.image ? `<img class="hero-image" src="${escapeText(featured.image)}" alt="">` : ''}
       <div class="hero-copy">
-        <div class="eyebrow"><span class="eyebrow-mark"></span>${featured.eyebrow}</div>
+        <div class="eyebrow"><span class="eyebrow-mark"></span>${escapeText(featured.eyebrow)}</div>
         <h1>${escapeText(featured.title)}</h1>
-        <div class="title-meta"><span>${featured.year}</span><span class="meta-dot"></span><span>${featured.runtime}</span><span class="meta-dot"></span><span>4K</span></div>
+        <div class="title-meta"><span>${escapeText(featured.year ?? 'Year unavailable')}</span><span class="meta-dot"></span><span>${escapeText(featured.runtime)}</span></div>
         <p class="hero-description">${escapeText(featured.description)}</p>
         <div class="hero-actions">
           <button class="action-primary" type="button" data-action="play-feature" data-row="2" data-index="0"><span class="play-glyph" aria-hidden="true">▶</span> PLAY</button>
           <button class="action-secondary" type="button" data-action="details-feature" data-row="2" data-index="1">MORE INFO</button>
-          <button class="action-round" type="button" data-action="favorite-feature" data-row="2" data-index="2" aria-label="Add featured title to My List" title="Add to My List">＋</button>
+          <button class="action-round" type="button" data-action="favorite-feature" data-row="2" data-index="2" aria-label="${favorites.has(featured.id) ? 'Remove featured title from My List' : 'Add featured title to My List'}" title="Toggle My List">${favorites.has(featured.id) ? '✓' : '＋'}</button>
         </div>
       </div>
       <div class="hero-pagination"><b>01</b><span></span>04</div>
     </section>
     ${railMarkup('Continue watching', watching, 3)}
     ${railMarkup('A little more like this', picks, 5)}
+    ${credential ? `${mainTitles.length ? '' : '<div class="empty-state">Your Jellyfin library is empty. Sample titles are shown below.</div>'}${railMarkup('Sample titles · simulated', sampleTitles, 7)}` : ''}
   </div>`;
 }
 
@@ -119,26 +103,32 @@ function renderListing(screen) {
   screenKicker.textContent = screen === 'saved' ? 'SAVED FOR A QUIETER MOMENT' : `BROWSE ${heading.toUpperCase()}`;
 
   if (screen === 'movies' || screen === 'shows') {
-    const feature = screen === 'movies' ? findTitle('tideglass') : findTitle('northbound');
-    const watching = list.filter((item) => progress.has(item.id));
-    const recent = [...list].sort((a, b) => b.year - a.year);
+    const mainList = credential ? list.filter((item) => item.source === 'jellyfin') : list;
+    const feature = mainList[0];
+    if (!feature) {
+      contentRoot.innerHTML = `<section class="listing-view"><div class="screen-heading"><h1>${heading}</h1></div><div class="empty-state">No Jellyfin ${heading.toLowerCase()} available.</div>${railMarkup('Sample titles · simulated', list.filter((item) => item.source === 'fixture'), 3, { posterCards: true, screen })}</section>`;
+      return;
+    }
+    const watching = mainList.filter((item) => progress.has(item.id));
+    const recent = [...mainList].sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
     const genres = screen === 'movies' ? ['Drama', 'Mystery', 'Adventure'] : ['Human stories', 'Mystery', 'Nature'];
     contentRoot.innerHTML = `<section class="listing-view catalog-view">
       <div class="catalog-heading"><div class="eyebrow"><span class="eyebrow-mark"></span>THE MORROW COLLECTION</div><h1>${heading}</h1><p>${description}</p></div>
       <section class="catalog-hero" aria-label="Featured ${heading.toLowerCase()}">
-        <img src="${feature.image}" alt="" class="catalog-hero-image">
+        ${feature.image ? `<img src="${escapeText(feature.image)}" alt="" class="catalog-hero-image">` : ''}
         <div class="catalog-hero-copy"><div class="eyebrow"><span class="eyebrow-mark"></span>FEATURED ${heading.toUpperCase()}</div>
-          <h2>${escapeText(feature.title)}</h2><div class="title-meta"><span>${feature.year}</span><span class="meta-dot"></span><span>${escapeText(feature.runtime)}</span><span class="meta-dot"></span><span>${escapeText(feature.genre)}</span></div>
+          <h2>${escapeText(feature.title)}</h2><div class="title-meta"><span>${escapeText(feature.year ?? 'Year unavailable')}</span><span class="meta-dot"></span><span>${escapeText(feature.runtime)}</span><span class="meta-dot"></span><span>${escapeText(feature.genre)}</span></div>
           <p>${escapeText(feature.description)}</p><div class="hero-actions">
             <button class="action-primary" type="button" data-action="play" data-id="${feature.id}" data-row="2" data-index="0"><span class="play-glyph" aria-hidden="true">▶</span> PLAY</button>
             <button class="action-secondary" type="button" data-action="details" data-id="${feature.id}" data-row="2" data-index="1">MORE INFO</button>
           </div>
         </div>
       </section>
-      ${railMarkup(`Popular ${heading}`, list, 3, { posterCards: true, screen })}
+      ${railMarkup(`Popular ${heading}`, mainList, 3, { posterCards: true, screen })}
       ${railMarkup('Continue watching', watching, 5, { posterCards: true, screen })}
       ${railMarkup(`New to Morrow`, recent, 7, { posterCards: true, screen })}
-      ${genres.map((genre, index) => railMarkup(`${genre} ${heading.toLowerCase()}`, list.filter((item) => item.genre === genre), 9 + index * 2, { posterCards: true, screen })).join('')}
+      ${genres.map((genre, index) => railMarkup(`${genre} ${heading.toLowerCase()}`, mainList.filter((item) => item.genre === genre), 9 + index * 2, { posterCards: true, screen })).join('')}
+      ${credential ? railMarkup('Sample titles · simulated', list.filter((item) => item.source === 'fixture'), 15, { posterCards: true, screen }) : ''}
     </section>`;
     return;
   }
@@ -180,7 +170,7 @@ function renderScreen({ focus = true } = {}) {
 }
 
 function findTitle(id) {
-  return titles.find((item) => item.id === id) ?? featured;
+  return titles.find((item) => item.id === id);
 }
 
 function openDetails(title) {
@@ -189,9 +179,9 @@ function openDetails(title) {
   const item = title.id === featured.id ? featured : title;
   overlayRoot.innerHTML = `<div class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title">
     <button class="close-overlay" type="button" data-action="close" aria-label="Close details">×</button>
-    <img class="detail-image" src="${item.image}" alt="">
-    <div class="detail-copy"><div class="eyebrow"><span class="eyebrow-mark"></span>${escapeText(item.genre.toUpperCase())}</div>
-      <h2 id="detail-title">${escapeText(item.title)}</h2><div class="title-meta"><span>${item.year}</span><span class="meta-dot"></span><span>${item.runtime}</span><span class="meta-dot"></span><span>${escapeText(item.type)}</span></div>
+    ${item.image ? `<img class="detail-image" src="${escapeText(item.image)}" alt="">` : ''}
+    <div class="detail-copy"><div class="eyebrow"><span class="eyebrow-mark"></span>${item.source === 'fixture' ? 'SAMPLE · ' : ''}${escapeText(item.genre.toUpperCase())}</div>
+      <h2 id="detail-title">${escapeText(item.title)}</h2><div class="title-meta"><span>${escapeText(item.year ?? 'Year unavailable')}</span><span class="meta-dot"></span><span>${escapeText(item.runtime)}</span><span class="meta-dot"></span><span>${escapeText(item.type)}</span></div>
       <p>${escapeText(item.description)}</p><div class="detail-actions">
         <button class="action-primary" type="button" data-action="play" data-id="${item.id}" data-row="10" data-index="0"><span class="play-glyph" aria-hidden="true">▶</span> PLAY</button>
         <button class="action-secondary" type="button" data-action="favorite" data-id="${item.id}" data-row="10" data-index="1">${favorites.has(item.id) ? '✓ IN MY LIST' : '＋ MY LIST'}</button>
@@ -205,9 +195,9 @@ function openPlayer(title) {
   state.selectedTitle = title.id;
   state.isPaused = false;
   overlayRoot.innerHTML = `<div class="player-panel" role="dialog" aria-modal="true" aria-label="Mock playback">
-    <img class="player-image" src="${title.image}" alt="">
+    ${title.image ? `<img class="player-image" src="${escapeText(title.image)}" alt="">` : ''}
     <button class="close-overlay" type="button" data-action="close" aria-label="Close player">×</button>
-    <div class="player-top"><span>MORROW ORIGINAL</span><span>LOCAL PREVIEW</span></div>
+    <div class="player-top"><span>SIMULATED PLAYBACK</span><span>NO VIDEO PLAYING</span></div>
     <div class="player-center" aria-hidden="true"><span id="player-state">Ⅱ</span></div>
     <div class="player-controls"><h2 class="player-title">${escapeText(title.title)}</h2><div class="player-progress"><span></span></div>
       <div class="player-foot"><span>00:42 <span aria-hidden="true">/</span> ${escapeText(title.runtime)}</span><button type="button" data-action="toggle-pause" data-row="10" data-index="0">Ⅱ PAUSE</button><span>CC&nbsp;&nbsp; AUDIO</span></div>
@@ -221,11 +211,29 @@ function navigate(screen) {
   renderScreen();
 }
 
-function handleAction(button) {
+async function setFavorite(item, favorite) {
+  if (item.source === 'jellyfin') {
+    const response = await fetch('/v1/household/favorites', {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${credential}` },
+      body: JSON.stringify({ id: item.apiId, favorite }),
+    });
+    if (!response.ok) throw new Error(`Favorite request failed (${response.status})`);
+  }
+  if (favorite) favorites.add(item.id);
+  else favorites.delete(item.id);
+}
+
+async function handleAction(button) {
   const { action, screen, id } = button.dataset;
+  const item = ['details', 'play', 'favorite'].includes(action) ? findTitle(id) : null;
+  if (['details', 'play', 'favorite'].includes(action) && !item) {
+    console.error('Selected title is no longer available');
+    window.alert('This title is no longer available. Reload the catalog.');
+    return;
+  }
   if (action === 'navigate') navigate(screen);
   if (action === 'open-search') navigate('search');
-  if (action === 'details') openDetails(findTitle(id));
+  if (action === 'details') openDetails(item);
   if (action === 'details-feature') openDetails(featured);
   if (action === 'play-feature') {
     state.focusReturn = button;
@@ -233,17 +241,27 @@ function handleAction(button) {
   }
   if (action === 'play') {
     if (!overlayRoot.firstElementChild) state.focusReturn = button;
-    openPlayer(findTitle(id));
+    openPlayer(item);
   }
   if (action === 'favorite-feature') {
-    favorites.add(featured.id);
-    button.textContent = '✓';
-    button.setAttribute('aria-label', 'Featured title added to My List');
+    try {
+      const favorite = !favorites.has(featured.id);
+      await setFavorite(featured, favorite);
+      button.textContent = favorite ? '✓' : '＋';
+      button.setAttribute('aria-label', favorite ? 'Remove featured title from My List' : 'Add featured title to My List');
+    } catch (error) {
+      console.error('Unable to update favorite:', error);
+      window.alert('Unable to update My List. Please retry.');
+    }
   }
   if (action === 'favorite') {
-    if (favorites.has(id)) favorites.delete(id);
-    else favorites.add(id);
-    openDetails(findTitle(id));
+    try {
+      await setFavorite(item, !favorites.has(id));
+      openDetails(item);
+    } catch (error) {
+      console.error('Unable to update favorite:', error);
+      window.alert('Unable to update My List. Please retry.');
+    }
   }
   if (action === 'toggle-pause') {
     state.isPaused = !state.isPaused;
@@ -251,18 +269,108 @@ function handleAction(button) {
     document.querySelector('#player-state').textContent = state.isPaused ? '▶' : 'Ⅱ';
   }
   if (action === 'profile') {
-    overlayRoot.innerHTML = `<div class="profile-pop" role="dialog" aria-modal="true"><button class="close-overlay" type="button" data-action="close" aria-label="Close profile">×</button><span class="profile-mark">M</span><h2>Morrow Home</h2><p>One home. One shared watchlist.</p><button class="action-secondary" type="button" data-action="close" data-row="10" data-index="0">DONE</button></div>`;
+    overlayRoot.innerHTML = `<div class="profile-pop" role="dialog" aria-modal="true"><button class="close-overlay" type="button" data-action="close" aria-label="Close profile">×</button><span class="profile-mark">M</span><h2>Morrow Home</h2><p>${deviceId ? `Connected device: ${escapeText(deviceId)}. Sample favorites are temporary.` : 'Sample favorites are temporary.'}</p><button class="action-secondary" type="button" data-action="close" data-row="10" data-index="0">DONE</button></div>`;
     overlayRoot.querySelector('[data-action="close"]:not(.close-overlay)').focus();
   }
   if (action === 'close') {
     closeOverlay();
   }
   if (action === 'reset') {
-    favorites.clear();
-    favorites.add('wild-index');
+    for (const item of sampleTitles) favorites.delete(item.id);
+    initialFavorites.forEach((id) => favorites.add(id));
     state.screen = 'home';
     state.selectedTitle = null;
     renderScreen();
+  }
+}
+
+function validateCatalog(catalog) {
+  const validItem = (item) => {
+    if (!item || typeof item !== 'object' ||
+        typeof item.id !== 'string' || !/^[a-z0-9-]+$/.test(item.id) ||
+        !['Movie', 'Show'].includes(item.type) || !Number.isInteger(item.year) ||
+        !['title', 'runtime', 'genre', 'description', 'image'].every((key) => typeof item[key] === 'string' && item[key].length > 0)) return false;
+    try {
+      const url = new URL(item.image);
+      return url.protocol === 'https:' && url.hostname === 'images.unsplash.com' && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  };
+  if (!catalog || catalog.source !== 'fixture' || !Array.isArray(catalog.titles) || !catalog.titles.every(validItem) ||
+      !validItem(catalog.featured) || typeof catalog.featured.eyebrow !== 'string' ||
+      !Array.isArray(catalog.progress) || !Array.isArray(catalog.favorites)) return false;
+  const ids = new Set(catalog.titles.map((item) => item.id));
+  return ids.size === catalog.titles.length && ids.has(catalog.featured.id) &&
+    catalog.progress.every((entry) => Array.isArray(entry) && entry.length === 2 &&
+      ids.has(entry[0]) && Number.isFinite(entry[1]) && entry[1] >= 0 && entry[1] <= 100) &&
+    catalog.favorites.every((id) => ids.has(id));
+}
+
+function realItem(item) {
+  if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !/^[a-zA-Z0-9-]{1,128}$/.test(item.id) ||
+      typeof item.title !== 'string' || !item.title || !['movie', 'series'].includes(item.type) ||
+      typeof item.isFavorite !== 'boolean' || typeof item.isPlayable !== 'boolean' ||
+      (item.year !== undefined && !Number.isInteger(item.year)) ||
+      (item.overview !== undefined && typeof item.overview !== 'string') ||
+      (item.progressPercent !== undefined && (!Number.isFinite(item.progressPercent) || item.progressPercent < 0 || item.progressPercent > 100))) {
+    throw new Error('Invalid Jellyfin catalog response');
+  }
+  return {
+    id: `real-${item.id}`, apiId: item.id, source: 'jellyfin', title: item.title,
+    type: item.type === 'movie' ? 'Movie' : 'Show', year: item.year,
+    runtime: 'Runtime unavailable', genre: 'Jellyfin', image: '',
+    description: item.overview || 'Description unavailable.', eyebrow: 'JELLYFIN LIBRARY',
+    isFavorite: item.isFavorite, progressPercent: item.progressPercent,
+  };
+}
+
+async function apiJson(path, options) {
+  const response = await fetch(path, options);
+  if (!response.ok) throw new Error(`Experience API request failed (${response.status})`);
+  return response.json();
+}
+
+async function loadCatalog() {
+  const generation = ++loadGeneration;
+  const activeCredential = credential;
+  catalogReady = false;
+  contentRoot.innerHTML = '<div class="empty-state" role="status">Loading preview catalog...</div>';
+  try {
+    const catalog = await apiJson('/v1/preview/catalog');
+    if (!validateCatalog(catalog)) throw new Error('Invalid preview catalog response');
+    const samples = catalog.titles.map((item) => ({ ...item, id: `sample-${item.id}`, source: 'fixture' }));
+    const sampleFeatured = { ...catalog.featured, id: `sample-${catalog.featured.id}`, source: 'fixture', eyebrow: 'SAMPLE · SIMULATED' };
+    let realTitles = [];
+    if (activeCredential) {
+      const options = { headers: { authorization: `Bearer ${activeCredential}` } };
+      const [movies, series] = await Promise.all([
+        apiJson('/v1/catalog/movies', options), apiJson('/v1/catalog/series', options),
+      ]);
+      if (!Array.isArray(movies) || !Array.isArray(series)) throw new Error('Invalid Jellyfin catalog response');
+      if (movies.some((item) => item?.type !== 'movie') || series.some((item) => item?.type !== 'series')) throw new Error('Invalid Jellyfin catalog type');
+      realTitles = [...movies, ...series].map(realItem);
+      if (new Set(realTitles.map((item) => item.id)).size !== realTitles.length) throw new Error('Duplicate Jellyfin catalog item');
+    }
+    if (generation !== loadGeneration) return;
+    sampleTitles = samples;
+    titles = [...realTitles, ...samples];
+    featured = realTitles[0] ?? sampleFeatured;
+    initialFavorites = catalog.favorites.map((id) => `sample-${id}`);
+    progress.clear();
+    catalog.progress.forEach(([id, percent]) => progress.set(`sample-${id}`, percent));
+    realTitles.forEach((item) => { if (item.progressPercent !== undefined) progress.set(item.id, item.progressPercent); });
+    favorites.clear();
+    initialFavorites.forEach((id) => favorites.add(id));
+    realTitles.forEach((item) => { if (item.isFavorite) favorites.add(item.id); });
+    document.querySelector('#source-status').textContent = credential ? 'JELLYFIN + API SAMPLES' : 'API SAMPLES';
+    catalogReady = true;
+    renderScreen();
+  } catch (error) {
+    if (generation !== loadGeneration) return;
+    catalogReady = false;
+    console.error('Unable to load preview catalog:', error);
+    contentRoot.innerHTML = '<div class="empty-state" role="alert">Unable to load the preview catalog from the Experience API. Check the API and pairing, then <button type="button" data-action="retry-catalog">retry</button>.</div>';
   }
 }
 
@@ -274,7 +382,41 @@ function closeOverlay() {
 
 document.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-action]');
-  if (button) handleAction(button);
+  if (!button) return;
+  if (button.dataset.action === 'pair-dialog') {
+    overlayRoot.innerHTML = `<div class="profile-pop" role="dialog" aria-modal="true"><button class="close-overlay" type="button" data-action="close" aria-label="Close">×</button><h2>Connect Jellyfin</h2><p>Enter an owner-generated pairing code. The credential stays in this tab's memory and is lost on reload.</p>${deviceId ? `<p>Connected device: ${escapeText(deviceId)}</p>` : ''}<label>Pairing code <input id="pairing-code" type="password" autocomplete="off"></label><p id="pairing-error" role="alert"></p><button class="action-secondary" type="button" data-action="pair-submit">CONNECT</button>${credential ? '<button class="action-secondary" type="button" data-action="disconnect">USE SAMPLES ONLY</button>' : ''}</div>`;
+  } else if (button.dataset.action === 'pair-submit') {
+    const input = document.querySelector('#pairing-code');
+    const errorElement = document.querySelector('#pairing-error');
+    const code = input.value.trim();
+    input.value = '';
+    button.disabled = true;
+    apiJson('/v1/devices/pair', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) })
+      .then((pair) => {
+        if (!pair || typeof pair.credential !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(pair.credential) ||
+            typeof pair.deviceId !== 'string' || !/^[a-f0-9-]{36}$/.test(pair.deviceId)) throw new Error('Invalid pairing response');
+        credential = pair.credential;
+        deviceId = pair.deviceId;
+        overlayRoot.innerHTML = '';
+        loadCatalog();
+      })
+      .catch((error) => {
+        console.error('Pairing failed:', error);
+        errorElement.textContent = 'Pairing failed. Check the code and try again.';
+        button.disabled = false;
+      });
+  } else if (button.dataset.action === 'disconnect') {
+    credential = null;
+    deviceId = null;
+    overlayRoot.innerHTML = '';
+    loadCatalog();
+  } else if (button.dataset.action === 'close') {
+    closeOverlay();
+  } else if (button.dataset.action === 'retry-catalog') {
+    loadCatalog();
+  } else if (catalogReady) {
+    handleAction(button);
+  }
 });
 
 function moveFocus(direction) {
@@ -300,6 +442,7 @@ function moveFocus(direction) {
 }
 
 document.addEventListener('keydown', (event) => {
+  if (!catalogReady) return;
   if (event.key.startsWith('Arrow') && !(document.activeElement instanceof HTMLInputElement)) {
     event.preventDefault();
     moveFocus(event.key);
@@ -315,4 +458,4 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-renderScreen();
+loadCatalog();

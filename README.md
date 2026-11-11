@@ -2,6 +2,10 @@
 
 Private, Roku-first household streaming on Windows, backed by an existing Jellyfin server. The [engineering specification](household_streaming_platform_specification.md) defines the product; it is **not yet a working streaming application**.
 
+An incomplete, loopback-only NestJS API foundation is documented in
+[docs/api/experience-api.md](docs/api/experience-api.md). It is not
+production-ready; the browser preview uses it through a local development proxy.
+
 <!-- ROADMAP:START -->
 **Active workstream:** M0-RK — Incremental Roku MCP integration (in progress).
 **Overall roadmap:** 9/39 work packages complete; statuses are tracked per package below.
@@ -11,7 +15,7 @@ Private, Roku-first household streaming on Windows, backed by an existing Jellyf
 | M0 — AI Engineering Foundation | complete | 7 complete, 0 in progress, 0 blocked, 0 not started |
 | M0-RK — Incremental Roku MCP integration | in progress | 2 complete, 6 in progress, 2 blocked, 0 not started |
 | M1 — Roku Mock Prototype | blocked | 0 complete, 0 in progress, 3 blocked, 3 not started |
-| M2 — Playable MVP | not started | 0 complete, 0 in progress, 0 blocked, 6 not started |
+| M2 — Playable MVP | in progress | 0 complete, 3 in progress, 0 blocked, 3 not started |
 | M3 — Autonomous Catalog | not started | 0 complete, 0 in progress, 0 blocked, 5 not started |
 | M4 — Self-Maintaining Platform | not started | 0 complete, 0 in progress, 0 blocked, 5 not started |
 
@@ -29,7 +33,7 @@ Detailed implementation state and evidence: [docs/development/implementation-sta
 
 ## Prerequisites
 
-- Node.js 24 LTS (bootstrap tooling only; Roku SDK compatibility still requires verification).
+- Node.js 24 LTS; Roku SDK compatibility still requires verification.
 - Git.
 - pnpm 10.11.0, or `npx --yes pnpm@10.11.0` if pnpm is not installed globally.
 
@@ -56,7 +60,7 @@ Use the pinned npx prefix in place of `pnpm` if needed. All CLI commands accept 
 | `pnpm ai:discover --task "..."` | Issues a new session receipt; lists instruction paths and missing capabilities |
 | `pnpm ai:explain --capability foundation-check` | Displays a registered capability |
 | `pnpm ai:verify-session --session <id> --task "..."` | Checks signature, task, lifetime and current registry |
-| `pnpm test` | Runs foundation and fake-transport inspection regression tests, no live services |
+| `pnpm test` | Runs foundation, preview, Roku inspection, and API regression tests using offline fixtures |
 | `pnpm roku:mcp:check --session <id> --task "..."` | Read-only installed SDK/context/advertisement inspection; no tool calls or TV access |
 | `pnpm ai:run --workflow roku-mcp-setup --session <id> --task "..." --inputs '{}'` | Signed tooling-inspection evidence, not physical integration acceptance |
 | `pnpm ai:run --workflow foundation-check --session <id> --task "..." --inputs '{}'` | Runs the gated foundation checks and records evidence |
@@ -65,6 +69,25 @@ Use the pinned npx prefix in place of `pnpm` if needed. All CLI commands accept 
 | `pnpm roadmap:write` | Regenerates README and implementation-status summaries from the roadmap |
 
 Exit codes: **0** passed, **1** invalid/failed, **2** completion blocked. An unborn or dirty worktree intentionally exits 2 for the workflow, even when all runnable tests pass. No automatic source commits are made. Read [the foundation runbook](docs/operations/foundation.md) for recovery and trust boundaries.
+
+## Browser preview and Experience API
+
+Build the API with `pnpm --filter @household/experience-api build`, start it
+with `pnpm --filter @household/experience-api start`, then run
+`pnpm preview:roku` and open `http://localhost:4173` on the same machine. Both
+services bind to loopback; the preview proxies a narrow set of requests to the
+API. If `HOUSEHOLD_API_PORT` is changed, set it for both processes.
+
+The API serves explicitly labeled sample titles without pairing or Jellyfin
+configuration. To browse a configured Jellyfin library, use **Connect Jellyfin**
+and an owner-generated pairing code as described in
+[docs/api/experience-api.md](docs/api/experience-api.md). Real favorites update
+Jellyfin; sample favorites are temporary. Samples appear separately from real
+titles, and missing real artwork and metadata are not fabricated. API errors
+are shown rather than silently replaced with samples. The browser holds the
+device credential only in memory; reload requires a new pairing code, and
+disconnecting does not revoke the device. Playback remains simulated. Do not
+deploy or expose this development preview as a household service.
 
 ## Roadmap
 

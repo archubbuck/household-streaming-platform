@@ -11,7 +11,7 @@ Requirements source: [household_streaming_platform_specification.md](../../house
 | M0 | AI Engineering Foundation | complete | Mandatory discovery, constrained workflows, deterministic tests, and source-bound evidence. |
 | M0-RK | Incremental Roku MCP integration | in progress | Pinned read-only tooling inspection and safe, evidence-backed device workflows without weakening M0. |
 | M1 | Roku Mock Prototype | blocked | A native sideloaded mock Roku app with remote navigation, verified on the target device. |
-| M2 | Playable MVP | not started | A Roku client that browses and plays existing Jellyfin content with shared watch state. |
+| M2 | Playable MVP | in progress | A Roku client that browses and plays existing Jellyfin content with shared watch state. |
 | M3 | Autonomous Catalog | not started | Authorized, validated media enters Jellyfin through durable catalog jobs. |
 | M4 | Self-Maintaining Platform | not started | Observable, backed-up Windows services with safe dry-run retention. |
 
@@ -57,10 +57,10 @@ Requirements source: [household_streaming_platform_specification.md](../../house
 
 | Work package | State | Implementation / verification | Dependencies | Blockers | Evidence |
 |---|---|---|---|---|---|
-| M2.1 — Experience API and contracts | not started | NestJS API and OpenAPI contracts are not implemented.<br>Verification: not run | M1 | — | None recorded |
-| M2.2 — Jellyfin library and artwork adapter | not started | No Jellyfin integration is implemented.<br>Verification: not run | M2.1 | — | None recorded |
-| M2.3 — Device pairing and credential lifecycle | not started | Pairing and revocable Roku credentials are not implemented.<br>Verification: not run | M2.1 | — | None recorded |
-| M2.4 — Playback, progress, and resume | not started | Playback negotiation, progress, resume, and completion are not implemented.<br>Verification: not run | M2.2, M2.3 | — | None recorded |
+| M2.1 — Experience API and contracts | in progress | A loopback NestJS API foundation serves sample preview data and authenticated catalog and favorites; the browser preview connects through a loopback proxy. Playback is unavailable.<br>Verification: partial | M1 | Complete OpenAPI contracts, pagination, production security review and M1 device acceptance remain outstanding. | [apps/experience-api/src/app.ts](../../apps/experience-api/src/app.ts) — Initial versioned routes; playback explicitly unavailable.<br>[apps/experience-api/src/api.test.ts](../../apps/experience-api/src/api.test.ts) — Offline route, authentication and preview proxy tests.<br>[scripts/roku/tests/ui-preview.test.mjs](../../scripts/roku/tests/ui-preview.test.mjs) — Browser preview proxy and mock interaction tests. |
+| M2.2 — Jellyfin library and artwork adapter | in progress | A scoped Jellyfin adapter supports initial catalog and favorite requests; artwork proxying is not implemented.<br>Verification: partial | M2.1 | Artwork and live Jellyfin compatibility remain unverified. | [apps/experience-api/src/jellyfin.ts](../../apps/experience-api/src/jellyfin.ts) — Initial adapter; tests use a fake upstream, not a real Jellyfin server.<br>[apps/experience-api/src/api.test.ts](../../apps/experience-api/src/api.test.ts) — Offline upstream request and error coverage. |
+| M2.3 — Device pairing and credential lifecycle | in progress | The API and CLI initialize a per-user device database; owner-generated single-use codes and revocable credentials support local pairing, including a browser preview with an in-memory credential.<br>Verification: partial | M2.1 | Windows ACLs, secure remote transport and native-device pairing remain unverified. | [apps/experience-api/src/devices.ts](../../apps/experience-api/src/devices.ts) — Automatic database initialization, SQLite pairing and revocation.<br>[apps/experience-api/src/api.test.ts](../../apps/experience-api/src/api.test.ts) — Offline first launch, pairing, expiry, persistence and revocation checks. |
+| M2.4 — Playback, progress, and resume | not started | Playback endpoints explicitly return 501; negotiation, progress, resume, and completion are not implemented.<br>Verification: not run | M2.2, M2.3 | — | [apps/experience-api/src/app.ts](../../apps/experience-api/src/app.ts) — Unavailable routes fail explicitly rather than simulating playback. |
 | M2.5 — Real-device playback compatibility | not started | No Direct Play or transcoding behavior has been tested on a Roku.<br>Verification: not run | M1.6, M2.4 | — | None recorded |
 | M2.6 — Playback and focus audits | not started | No device focus/playback audit journeys are implemented.<br>Verification: not run | M2.5 | — | None recorded |
 

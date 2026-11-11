@@ -8,7 +8,14 @@ Only read-only SDK inspection is enabled. No app, deployment, remote-key, screen
 
 The `roku-mcp-setup` workflow includes `.artifacts/tasks/<run-id>/roku-device/evidence.json` in its signed artifact hashes. Until an authorized device workflow exists, this record is always `blocked`, leaves device/lease fields unobserved, and is not evidence that a physical check ran. Verification validates its schema and binds it to the task run, commit and source digest.
 
-For offline UI iteration, start the browser mock with `pnpm preview:roku` and open the forwarded port (default `4173`). The preview uses local fixture state; it does not call `rk`, Jellyfin or the Roku. Arrow keys move focus, Enter selects, and Escape backs out. Its rendering is not evidence of native Roku compatibility.
+For browser UI iteration, build and start the Experience API, then start the
+preview with `pnpm preview:roku` on the same machine. The loopback preview
+proxies the API's sample catalog and, after owner pairing, authenticated
+Jellyfin catalog and favorite requests. Sample favorites and playback remain
+simulated. The preview does not call `rk` or a Roku and must not be exposed as
+a household service. See the [API runbook](../api/experience-api.md) for pairing,
+failure handling and limitations. Arrow keys move focus, Enter selects, and
+Escape backs out. Browser rendering is not evidence of native Roku compatibility.
 
 ## Reproducible setup
 
