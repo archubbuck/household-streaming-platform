@@ -25,7 +25,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - name: Install pinned dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Discover, run and independently verify current commit
         shell: pwsh
         run: |
@@ -35,6 +35,21 @@ jobs:
           $receipt = $receiptJson | ConvertFrom-Json
           foreach ($instruction in $receipt.instructions) { Get-Content -LiteralPath $instruction }
           $reportJson = node scripts/ai/cli.mjs run --workflow foundation-check --session $receipt.sessionId --task $task --inputs '{}'
+          $runExit = $LASTEXITCODE
+          $reportJson | Write-Output
+          if ($runExit -ne 0) { exit $runExit }
+          $report = $reportJson | ConvertFrom-Json
+          node scripts/ai/cli.mjs verify --run $report.runId --session $receipt.sessionId --task $task
+          exit $LASTEXITCODE
+      - name: Inspect pinned SDK without a TV
+        shell: pwsh
+        run: |
+          $task = 'Validate Roku MCP inspection in CI'
+          $receiptJson = node scripts/ai/cli.mjs discover --task $task
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $receipt = $receiptJson | ConvertFrom-Json
+          foreach ($instruction in $receipt.instructions) { Get-Content -LiteralPath $instruction }
+          $reportJson = node scripts/ai/cli.mjs run --workflow roku-mcp-setup --session $receipt.sessionId --task $task --inputs '{}'
           $runExit = $LASTEXITCODE
           $reportJson | Write-Output
           if ($runExit -ne 0) { exit $runExit }

@@ -1,0 +1,2 @@
+# SDK-managed hashes require identical generated text on Windows and Linux.
+.agents/skills/** text eol=lf

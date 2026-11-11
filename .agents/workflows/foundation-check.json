@@ -4,7 +4,8 @@
   "permissions": { "write": [".artifacts/tasks/{runId}"] },
   "steps": [
     { "id": "registry", "action": "script", "command": "registry" },
-    { "id": "foundation-tests", "action": "script", "command": "foundation-tests" }
+    { "id": "foundation-tests", "action": "script", "command": "foundation-tests" },
+    { "id": "roku-tests", "action": "script", "command": "roku-tests" }
   ],
-  "completion": { "require": ["registry", "foundation-tests", "source-unchanged", "commit-bound"] }
+  "completion": { "require": ["registry", "foundation-tests", "roku-tests", "source-unchanged", "commit-bound"] }
 }

@@ -22,12 +22,14 @@ function git(root, ...args) {
 function fixture(t, { committed = false, testBody } = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'household-m0-'));
   t.after(() => rmSync(root, { recursive: true, force: true, maxRetries: 3 }));
-  for (const entry of ['.agents', '.github', 'scripts', 'docs', 'README.md', 'AGENTS.md', '.gitignore', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
+  for (const entry of ['.agents', '.github', '.vscode', 'scripts', 'docs', 'README.md', 'AGENTS.md', '.gitignore', '.gitattributes', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
     if (existsSync(path.join(source, entry))) cpSync(path.join(source, entry), path.join(root, entry), { recursive: true });
   }
   // The runner integration uses a small isolated test, not recursive execution of this suite.
   writeFileSync(path.join(root, 'scripts/ai/tests/foundation.test.mjs'), testBody ??
     "import test from 'node:test'; import assert from 'node:assert/strict'; test('fixture check', () => assert.equal(2 + 2, 4));\n");
+  writeFileSync(path.join(root, 'scripts/roku/tests/inspection.test.mjs'),
+    "import test from 'node:test'; test('fixture Roku offline check', () => {});\n");
   git(root, 'init', '--quiet');
   if (committed) commit(root);
   return root;
@@ -222,6 +224,35 @@ test('clean committed fixture completes and verifies the entire workflow', (t) =
   assert.match(report.commitSha, /^[a-f0-9]{40,64}$/);
   assert.ok(report.checks.every((check) => check.status === 'passed'));
   assert.equal(verifyEvidence(root, { run: report.runId, session: receipt.sessionId, task }).readyForMerge, true);
+});
+
+test('offline Roku setup preserves blocked status and signed evidence without disabling foundation', (t) => {
+  const root = fixture(t, { committed: true });
+  const scope = 'Validate Roku MCP setup';
+  const receipt = discover(root, scope);
+  const report = runWorkflow(root, { workflow: 'roku-mcp-setup', session: receipt.sessionId, task: scope, inputs: {} });
+  assert.equal(report.checks.find((check) => check.id === 'roku-preflight').status, 'blocked');
+  assert.equal(report.checks.find((check) => check.id === 'roku-preflight').exitCode, 2);
+  assert.equal(reportExitCode(report), 2);
+  assert.equal(verifyEvidence(root, { run: report.runId, session: receipt.sessionId, task: scope }).readyForMerge, false);
+  assert.equal(run(root).report.readyForMerge, true);
+});
+
+test('SDK installation changes invalidate availability observations in discovery', (t) => {
+  const root = fixture(t);
+  const receipt = discover(root, task);
+  writeJson(root, 'node_modules/@roku-sdk/tooling/package.json', { version: '2.19.1' });
+  assert.throws(() => verifySession(root, receipt.sessionId, task), /SDK availability changed/);
+});
+
+test('editor config and vendor skill changes invalidate the registry receipt', (t) => {
+  const root = fixture(t);
+  const receipt = discover(root, task);
+  writeFileSync(path.join(root, '.vscode/mcp.json'), '{}');
+  assert.throws(() => verifySession(root, receipt.sessionId, task), /Registry changed/);
+  const fresh = discover(root, task);
+  writeFileSync(path.join(root, '.agents/skills/roku-sdk-mcp-setup/SKILL.md'), 'changed');
+  assert.throws(() => verifySession(root, fresh.sessionId, task), /Registry changed/);
 });
 
 test('dirty committed source is never merge-ready', (t) => {

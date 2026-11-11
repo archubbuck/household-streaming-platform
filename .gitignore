@@ -1,5 +1,7 @@
 node_modules/
 .artifacts/
+.roku/
+.rce/
 coverage/
 dist/
 .env

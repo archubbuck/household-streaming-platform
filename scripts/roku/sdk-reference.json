@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "toolingVersion": "2.19.1",
+  "toolDefinitionsSha256": "f190b42b3b18d097dd8dc686eb1bf1b6ea3255fb7d314891396f4db56ae59f3d",
+  "advertisedCatalogFingerprint": "2c3417667ad991de9bf26cf5e1d13bb511476ac6841e788466b9fb8c1c11d70d",
+  "advertisedToolCount": 80,
+  "toolDefinitionsPath": "src/server/routes/mcp-tool-definitions.ts",
+  "protocolVersion": "2025-06-18",
+  "reviewed": true
+}

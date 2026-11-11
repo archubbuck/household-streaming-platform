@@ -38,4 +38,4 @@ Create the actual asset and a strict manifest entry with an ID, type, descriptio
 
 ## CI
 
-CI installs the pinned lockfile, independently discovers, reads selected instructions, runs the same workflow and verifies its current-commit evidence. Any failed or blocked gate fails the job. Artifacts are uploaded without the signing key. Windows execution is locally tested; Linux and hosted Actions execution are not claimed until CI actually runs. Branch protection and source hosting are owner decisions, not automatically configured.
+CI installs the pinned lockfile with lifecycle scripts disabled, independently discovers, reads selected instructions, runs foundation and read-only SDK inspection workflows and verifies their current-commit evidence. Any failed or blocked gate fails the job. Artifacts are uploaded without the signing key. SDK inspection never calls device tools; default foundation checks remain usable without SDK/device access. Windows execution is locally tested; Linux and hosted Actions execution are not claimed until CI actually runs. Branch protection remains an owner decision.

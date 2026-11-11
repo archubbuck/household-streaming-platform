@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "capabilities": [
+    {
+      "id": "roku-inspection", "type": "script", "version": 1,
+      "description": "Bounded read-only SDK inspection and receipt-gated editor bridge, with no device operation surface.",
+      "tags": ["roku", "mcp"], "entrypoint": "scripts/roku/check.mjs",
+      "resources": ["scripts/roku/inspection.mjs", "scripts/roku/editor-mcp.mjs", ".agents/schemas/roku-inspection.schema.json", "scripts/roku/tests/inspection.test.mjs"],
+      "dependencies": ["roku-mcp", "discovery"], "applicability": { "always": false, "keywords": ["roku", "mcp", "implementation", "specification"] }, "owner": "infrastructure",
+      "permissions": { "write": [] }, "validations": ["registry", "roku-tests"]
+    },
+    {
+      "id": "roku-mcp-setup", "type": "workflow", "version": 1,
+      "description": "Read-only setup inspection with source-bound evidence; not physical integration acceptance.",
+      "tags": ["roku", "mcp"], "entrypoint": ".agents/workflows/roku-mcp-setup.json", "resources": [],
+      "dependencies": ["roku-inspection", "roku-sdk-mcp-setup", "workflow-runner"],
+      "applicability": { "always": false, "keywords": ["roku", "mcp", "implementation", "specification"] }, "owner": "infrastructure",
+      "permissions": { "write": [".artifacts/tasks"] }, "validations": ["registry", "foundation-tests", "roku-tests"]
+    },
+    {
+      "id": "roku-mcp", "type": "runbook", "version": 1,
+      "description": "Read-only Roku SDK compatibility and MCP preflight; device control remains disabled.",
+      "tags": ["roku", "mcp"], "entrypoint": "docs/operations/roku-mcp.md",
+      "resources": ["docs/development/roku-mcp-gap-analysis.md", "docs/development/third-party-notices.md", "docs/adr/0002-roku-mcp-inspection.md", ".vscode/mcp.json", "scripts/roku/sdk-reference.json"],
+      "dependencies": ["core-behaviors"], "applicability": { "always": true, "keywords": [] }, "owner": "infrastructure",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "roku-sdk-mcp-setup", "type": "skill", "version": 1,
+      "description": "Unmodified installed SDK MCP setup skill, subordinate to repository safety policy.",
+      "tags": ["roku", "mcp"], "entrypoint": ".agents/skills/roku-sdk-mcp-setup/SKILL.md", "resources": [],
+      "dependencies": ["roku-mcp"], "applicability": { "always": false, "keywords": ["roku", "mcp", "implementation", "specification"] }, "owner": "infrastructure",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "roku-sdk-mcp-ai-dev-loop", "type": "skill", "version": 1,
+      "description": "Official SDK device-loop reference, not authorization or an implemented repository device workflow.",
+      "tags": ["roku", "mcp"], "entrypoint": ".agents/skills/roku-sdk-mcp-ai-dev-loop/SKILL.md",
+      "resources": [".agents/skills/roku-sdk-mcp-ai-dev-loop/references/crash-and-console.md", ".agents/skills/roku-sdk-mcp-ai-dev-loop/references/live-debugging.md"],
+      "dependencies": ["roku-mcp"], "applicability": { "always": false, "keywords": ["deploy", "playback", "focus", "device loop"] }, "owner": "roku",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "roku-sdk-reference-skills", "type": "skill", "version": 1,
+      "description": "Remaining vendor-generated SDK reference bundle; inspect the applicable skill before future SDK work.",
+      "tags": ["roku", "reference"], "entrypoint": ".agents/skills/roku-sdk-sdk-installation/SKILL.md",
+      "resources": [
+        ".agents/skills/roku-sdk-ads-and-raf/SKILL.md", ".agents/skills/roku-sdk-ads-and-raf/references/integration-flows.md",
+        ".agents/skills/roku-sdk-app-packaging/SKILL.md", ".agents/skills/roku-sdk-app-performance/SKILL.md",
+        ".agents/skills/roku-sdk-cli-dev-loop/SKILL.md", ".agents/skills/roku-sdk-cli-dev-loop/references/logs-and-crashes.md",
+        ".agents/skills/roku-sdk-cpu-and-heap-profiling/SKILL.md", ".agents/skills/roku-sdk-cpu-and-heap-profiling/references/reading-profiles.md",
+        ".agents/skills/roku-sdk-data-entry-keyboards/SKILL.md", ".agents/skills/roku-sdk-device-management/SKILL.md",
+        ".agents/skills/roku-sdk-dialogs-and-modals/SKILL.md", ".agents/skills/roku-sdk-effects/SKILL.md",
+        ".agents/skills/roku-sdk-fetch-and-data-loading/SKILL.md", ".agents/skills/roku-sdk-fetch-and-data-loading/references/https-and-certificates.md",
+        ".agents/skills/roku-sdk-flex-grid/SKILL.md", ".agents/skills/roku-sdk-flex-grid/references/focus-integration.md", ".agents/skills/roku-sdk-flex-grid/references/plugins.md",
+        ".agents/skills/roku-sdk-focus-management/SKILL.md", ".agents/skills/roku-sdk-focus-management/references/focus-recipes.md",
+        ".agents/skills/roku-sdk-fonts-and-glyphs/SKILL.md", ".agents/skills/roku-sdk-fonts-and-glyphs/references/glyph-tables.md",
+        ".agents/skills/roku-sdk-logging-and-errors/SKILL.md", ".agents/skills/roku-sdk-logging-and-errors/references/uncaught-exceptions.md",
+        ".agents/skills/roku-sdk-project-setup/SKILL.md", ".agents/skills/roku-sdk-project-setup/references/roku-config.md",
+        ".agents/skills/roku-sdk-screen-navigation/SKILL.md", ".agents/skills/roku-sdk-sdk-components/SKILL.md",
+        ".agents/skills/roku-sdk-sdk-components/references/dialogs.md", ".agents/skills/roku-sdk-sdk-components/references/scenegraph-node-spelling.md",
+        ".agents/skills/roku-sdk-slideshow/SKILL.md", ".agents/skills/roku-sdk-slideshow/references/focus-and-handoff.md",
+        ".agents/skills/roku-sdk-solid-on-roku/SKILL.md", ".agents/skills/roku-sdk-solid-on-roku/references/hermes-and-exports.md",
+        ".agents/skills/roku-sdk-testing/SKILL.md", ".agents/skills/roku-sdk-testing/references/async-and-timing.md",
+        ".agents/skills/roku-sdk-user-accounts-and-purchases/SKILL.md"
+      ],
+      "dependencies": ["roku-mcp"], "applicability": { "always": false, "keywords": ["official sdk reference bundle"] }, "owner": "roku",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    }
+  ]
+}
