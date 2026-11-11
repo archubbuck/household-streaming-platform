@@ -1,0 +1,10 @@
+{
+  "id": "foundation-check", "version": 1,
+  "inputs": { "type": "object", "additionalProperties": false, "properties": {} },
+  "permissions": { "write": [".artifacts/tasks/{runId}"] },
+  "steps": [
+    { "id": "registry", "action": "script", "command": "registry" },
+    { "id": "foundation-tests", "action": "script", "command": "foundation-tests" }
+  ],
+  "completion": { "require": ["registry", "foundation-tests", "source-unchanged", "commit-bound"] }
+}

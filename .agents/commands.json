@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "commands": {
+    "registry": { "kind": "internal", "handler": "validate-registry", "timeoutMs": 10000, "write": [] },
+    "foundation-tests": { "kind": "node", "args": ["--test", "scripts/ai/tests/foundation.test.mjs"], "timeoutMs": 120000, "write": [] }
+  }
+}

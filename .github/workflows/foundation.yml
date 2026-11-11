@@ -1,0 +1,52 @@
+name: M0 foundation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install pinned dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Discover, run and independently verify current commit
+        shell: pwsh
+        run: |
+          $task = 'Validate M0 foundation in CI'
+          $receiptJson = node scripts/ai/cli.mjs discover --task $task
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $receipt = $receiptJson | ConvertFrom-Json
+          foreach ($instruction in $receipt.instructions) { Get-Content -LiteralPath $instruction }
+          $reportJson = node scripts/ai/cli.mjs run --workflow foundation-check --session $receipt.sessionId --task $task --inputs '{}'
+          $runExit = $LASTEXITCODE
+          $reportJson | Write-Output
+          if ($runExit -ne 0) { exit $runExit }
+          $report = $reportJson | ConvertFrom-Json
+          node scripts/ai/cli.mjs verify --run $report.runId --session $receipt.sessionId --task $task
+          exit $LASTEXITCODE
+      - name: Upload evidence without the local signing key
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-${{ matrix.os }}
+          path: .artifacts/tasks/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14

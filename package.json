@@ -1,0 +1,20 @@
+{
+  "name": "household-streaming-platform",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.11.0",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "ai:discover": "node scripts/ai/cli.mjs discover",
+    "ai:inventory": "node scripts/ai/cli.mjs inventory",
+    "ai:validate-registry": "node scripts/ai/cli.mjs validate-registry",
+    "ai:explain": "node scripts/ai/cli.mjs explain",
+    "ai:verify-session": "node scripts/ai/cli.mjs verify-session",
+    "ai:run": "node scripts/ai/cli.mjs run",
+    "ai:verify": "node scripts/ai/cli.mjs verify",
+    "validate": "node scripts/ai/cli.mjs validate-registry",
+    "test": "node --test scripts/ai/tests/foundation.test.mjs"
+  },
+  "devDependencies": { "ajv": "8.20.0" }
+}

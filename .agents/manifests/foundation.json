@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "capabilities": [
+    {
+      "id": "foundation-runbook", "type": "runbook", "version": 1,
+      "description": "Bootstrap operation, evidence recovery and current implementation boundaries.", "tags": ["foundation", "operations"],
+      "entrypoint": "docs/operations/foundation.md", "resources": ["README.md", "docs/development/implementation-status.md"],
+      "dependencies": ["foundation-adr"], "applicability": { "always": true, "keywords": [] }, "owner": "infrastructure",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "foundation-adr", "type": "adr", "version": 1,
+      "description": "Bootstrap exception, pinned toolchain and local runner trust boundary.", "tags": ["architecture", "foundation"],
+      "entrypoint": "docs/adr/0001-foundation-bootstrap.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": false, "keywords": ["foundation", "bootstrap", "m0"] }, "owner": "orchestrator",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "foundation-tests", "type": "script", "version": 1,
+      "description": "Isolated native Node regression tests for registry, receipts, workflows and evidence.", "tags": ["testing", "foundation"],
+      "entrypoint": "scripts/ai/tests/foundation.test.mjs", "resources": [], "dependencies": ["workflow-runner"],
+      "applicability": { "always": false, "keywords": ["test", "foundation", "m0"] }, "owner": "quality",
+      "permissions": { "write": [] }, "validations": ["registry", "foundation-tests"]
+    },
+    {
+      "id": "foundation-check", "type": "workflow", "version": 1,
+      "description": "Allowlisted M0 validation with signed, source-bound evidence.", "tags": ["foundation", "m0"],
+      "entrypoint": ".agents/workflows/foundation-check.json", "resources": [".agents/workflows/foundation-check.md"],
+      "dependencies": ["workflow-runner", "quality"],
+      "applicability": { "always": false, "keywords": ["foundation", "m0", "implement", "validate", "test", "ci", "bootstrap"] }, "owner": "orchestrator",
+      "permissions": { "write": [".artifacts/tasks"] }, "validations": ["registry", "foundation-tests"]
+    },
+    {
+      "id": "workflow-runner", "type": "script", "version": 1,
+      "description": "Validate workflow inputs and permissions; run only known command implementations.", "tags": ["foundation"],
+      "entrypoint": "scripts/ai/runner.mjs",
+      "resources": [".agents/commands.json", ".agents/schemas/workflow.schema.json", ".agents/schemas/task.schema.json", ".agents/schemas/evidence.schema.json"],
+      "dependencies": ["discovery"], "applicability": { "always": false, "keywords": ["workflow", "evidence"] }, "owner": "orchestrator",
+      "permissions": { "write": [".artifacts/tasks"] }, "validations": ["registry", "foundation-tests"]
+    },
+    {
+      "id": "core-behaviors", "type": "behavior", "version": 1,
+      "description": "Mandatory ownership, determinism, recovery, security, validation and documentation rules.",
+      "tags": ["global"], "entrypoint": ".agents/behaviors/core.md",
+      "resources": ["AGENTS.md", ".github/copilot-instructions.md"], "dependencies": [],
+      "applicability": { "always": true, "keywords": [] }, "owner": "orchestrator",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "orchestrator", "type": "agent", "version": 1,
+      "description": "Plan and integrate work without bypassing gates.", "tags": ["planning"],
+      "entrypoint": ".agents/agents/specialists.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": true, "keywords": [] }, "owner": "orchestrator",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "roku", "type": "agent", "version": 1,
+      "description": "Roku UI, focus and playback client ownership; hardware gate remains mandatory.", "tags": ["roku"],
+      "entrypoint": ".agents/agents/specialists.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": false, "keywords": ["roku", "screen", "playback", "remote", "focus"] }, "owner": "roku",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "api", "type": "agent", "version": 1,
+      "description": "API contracts, pairing and Jellyfin integration ownership.", "tags": ["api"],
+      "entrypoint": ".agents/agents/specialists.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": false, "keywords": ["api", "contract", "jellyfin", "pairing"] }, "owner": "api",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "catalog", "type": "agent", "version": 1,
+      "description": "Authorized catalog, ranking, acquisition and retention ownership.", "tags": ["catalog"],
+      "entrypoint": ".agents/agents/specialists.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": false, "keywords": ["catalog", "ranking", "acquisition", "retention"] }, "owner": "catalog",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "infrastructure", "type": "agent", "version": 1,
+      "description": "Native Windows operations, backup and deployment ownership.", "tags": ["windows"],
+      "entrypoint": ".agents/agents/specialists.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": false, "keywords": ["windows", "deploy", "backup", "infrastructure"] }, "owner": "infrastructure",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "quality", "type": "agent", "version": 1,
+      "description": "Truthful validation and negative regression coverage.", "tags": ["testing"],
+      "entrypoint": ".agents/agents/specialists.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": true, "keywords": [] }, "owner": "quality",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "discovery", "type": "script", "version": 1,
+      "description": "Scan capabilities, validate completeness and issue exact-task-bound receipts.", "tags": ["foundation", "m0"],
+      "entrypoint": "scripts/ai/cli.mjs", "resources": ["scripts/ai/core.mjs"], "dependencies": ["core-behaviors", "capability-schema"],
+      "applicability": { "always": true, "keywords": [] }, "owner": "orchestrator",
+      "permissions": { "write": [".artifacts/sessions", ".artifacts/receipt-key"] }, "validations": ["registry"]
+    },
+    {
+      "id": "capability-schema", "type": "schema", "version": 1,
+      "description": "Strict JSON Schema for all capability manifests.", "tags": ["schema"],
+      "entrypoint": ".agents/schemas/capability.schema.json", "resources": [], "dependencies": [],
+      "applicability": { "always": true, "keywords": [] }, "owner": "quality",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    },
+    {
+      "id": "task-brief", "type": "template", "version": 1,
+      "description": "Reusable task, plan and change report checklist.", "tags": ["planning"],
+      "entrypoint": ".agents/templates/task-brief.md", "resources": [], "dependencies": ["core-behaviors"],
+      "applicability": { "always": true, "keywords": [] }, "owner": "orchestrator",
+      "permissions": { "write": [] }, "validations": ["registry"]
+    }
+  ]
+}
