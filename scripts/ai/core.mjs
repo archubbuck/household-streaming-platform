@@ -18,6 +18,8 @@ export const commandAllowlist = {
   commands: {
     registry: { kind: 'internal', handler: 'validate-registry', timeoutMs: 10000, write: [] },
     'foundation-tests': { kind: 'node', args: ['--test', 'scripts/ai/tests/foundation.test.mjs'], timeoutMs: 120000, write: [] },
+    'roadmap-check': { kind: 'node', args: ['scripts/ai/roadmap.mjs', '--check'], timeoutMs: 10000, write: [] },
+    'roadmap-tests': { kind: 'node', args: ['--test', 'scripts/ai/tests/roadmap.test.mjs'], timeoutMs: 30000, write: [] },
     'roku-tests': { kind: 'node', args: ['--test', 'scripts/roku/tests/inspection.test.mjs'], timeoutMs: 120000, write: [] },
     'ui-preview-tests': { kind: 'node', args: ['--test', 'scripts/roku/tests/ui-preview.test.mjs'], timeoutMs: 30000, write: [] },
     'roku-preflight': { kind: 'internal', handler: 'roku-preflight', timeoutMs: 45000, write: [] },

@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "sources": {
+    "requirements": "household_streaming_platform_specification.md",
+    "status": "docs/development/implementation-status.md"
+  },
+  "milestones": [
+    {
+      "id": "M0",
+      "title": "AI Engineering Foundation",
+      "outcome": "Mandatory discovery, constrained workflows, deterministic tests, and source-bound evidence.",
+      "packages": [
+        {
+          "id": "M0.1",
+          "title": "Session discovery instructions",
+          "status": "complete",
+          "implementation": "Root discovery instructions and the VS Code instruction bridge are in place.",
+          "verification": "passed",
+          "dependencies": [],
+          "evidence": [{ "path": "AGENTS.md", "note": "Mandatory discovery sequence and trust boundary." }],
+          "blockers": []
+        },
+        {
+          "id": "M0.2",
+          "title": "Capability schema and registry validation",
+          "status": "complete",
+          "implementation": "Strict capability manifests, completeness checks, and dependency validation are implemented.",
+          "verification": "passed",
+          "dependencies": ["M0.1"],
+          "evidence": [
+            { "path": ".agents/schemas/capability.schema.json", "note": "Strict manifest schema." },
+            { "path": "scripts/ai/tests/foundation.test.mjs", "note": "Registry and invalid-manifest regression coverage." }
+          ],
+          "blockers": []
+        },
+        {
+          "id": "M0.3",
+          "title": "Discovery, inventory, explain, and session verification",
+          "status": "complete",
+          "implementation": "The CLI scans capabilities and issues exact-task and registry-bound receipts.",
+          "verification": "passed",
+          "dependencies": ["M0.2"],
+          "evidence": [
+            { "path": "scripts/ai/cli.mjs", "note": "Implemented discovery and registry commands." },
+            { "path": "scripts/ai/tests/foundation.test.mjs", "note": "Receipt matching and invalidation tests." }
+          ],
+          "blockers": []
+        },
+        {
+          "id": "M0.4",
+          "title": "Specialist roles and mandatory behaviors",
+          "status": "complete",
+          "implementation": "Specialist ownership and mandatory engineering behaviors are registered.",
+          "verification": "passed",
+          "dependencies": ["M0.2"],
+          "evidence": [
+            { "path": ".agents/agents/specialists.md", "note": "Role boundaries." },
+            { "path": ".agents/behaviors/core.md", "note": "Mandatory safety, validation, and documentation behaviors." }
+          ],
+          "blockers": []
+        },
+        {
+          "id": "M0.5",
+          "title": "Constrained workflow runner and signed evidence",
+          "status": "complete",
+          "implementation": "The runner enforces closed inputs, command allowlists, artifact-only writes, and signed source-bound evidence.",
+          "verification": "passed",
+          "dependencies": ["M0.3", "M0.4"],
+          "evidence": [
+            { "path": "scripts/ai/runner.mjs", "note": "Workflow execution and evidence verification." },
+            { "path": "scripts/ai/tests/foundation.test.mjs", "note": "Workflow policy, tamper, and source-integrity coverage." }
+          ],
+          "blockers": []
+        },
+        {
+          "id": "M0.6",
+          "title": "Pinned toolchain, regression tests, and CI definition",
+          "status": "complete",
+          "implementation": "The native Node test suite, pinned dependencies, and Windows/Linux CI workflow are defined.",
+          "verification": "passed",
+          "dependencies": ["M0.5"],
+          "evidence": [
+            { "path": "package.json", "note": "Pinned package manager and dependencies." },
+            { "path": ".github/workflows/foundation.yml", "note": "Cross-platform foundation CI definition; hosted execution is tracked separately." }
+          ],
+          "blockers": []
+        },
+        {
+          "id": "M0.7",
+          "title": "Sample workflow",
+          "status": "complete",
+          "implementation": "The foundation workflow is exercised against isolated committed test repositories.",
+          "verification": "passed",
+          "dependencies": ["M0.5", "M0.6"],
+          "evidence": [{ "path": "scripts/ai/tests/foundation.test.mjs", "note": "Clean committed fixture completes and verifies the workflow." }],
+          "blockers": []
+        }
+      ]
+    },
+    {
+      "id": "M0-RK",
+      "title": "Incremental Roku MCP integration",
+      "outcome": "Pinned read-only tooling inspection and safe, evidence-backed device workflows without weakening M0.",
+      "packages": [
+        {
+          "id": "M0-RK-01",
+          "title": "Baseline gap assessment",
+          "status": "complete",
+          "implementation": "The existing foundation was assessed and Roku MCP gaps were recorded without recreating M0.",
+          "verification": "passed",
+          "dependencies": ["M0.1", "M0.5"],
+          "evidence": [{ "path": "docs/development/roku-mcp-gap-analysis.md", "note": "Incremental gap matrix and acceptance boundary." }],
+          "blockers": []
+        },
+        {
+          "id": "M0-RK-02",
+          "title": "Pinned SDK and editor configuration",
+          "status": "in_progress",
+          "implementation": "Tooling is pinned and both repository MCP configurations use editor-specific formats and workspace-relative paths.",
+          "verification": "partial",
+          "dependencies": ["M0-RK-01"],
+          "evidence": [
+            { "path": ".vscode/mcp.json", "note": "VS Code stdio configuration." },
+            { "path": ".mcp.json", "note": "Second editor configuration; editor discovery/callability remains unobserved." },
+            { "path": "scripts/roku/tests/inspection.test.mjs", "note": "Configuration validity and failure tests." }
+          ],
+          "blockers": ["Editor-client connectivity and physical-device compatibility have not been verified."]
+        },
+        {
+          "id": "M0-RK-03",
+          "title": "Official SDK skill registration",
+          "status": "complete",
+          "implementation": "Generated Roku SDK skills are present at their prescribed locations without divergent edits.",
+          "verification": "passed",
+          "dependencies": ["M0-RK-02"],
+          "evidence": [
+            { "path": ".agents/manifests/roku.json", "note": "Official skills are registered." },
+            { "path": "docs/development/third-party-notices.md", "note": "Vendor notice retained." }
+          ],
+          "blockers": []
+        },
+        {
+          "id": "M0-RK-04",
+          "title": "SDK and MCP availability observations",
+          "status": "in_progress",
+          "implementation": "Discovery records static SDK/config/context observations and the local tooling probe has observed 80 advertised tools; callability and editor access are not inferred.",
+          "verification": "partial",
+          "dependencies": ["M0-RK-03"],
+          "evidence": [
+            { "path": "scripts/roku/inspection.mjs", "note": "Closed, normalized availability observations." },
+            { "path": "docs/development/implementation-status.md", "note": "Generated status summary from this roadmap." }
+          ],
+          "blockers": ["Connected-editor tool callability remains unobserved."]
+        },
+        {
+          "id": "M0-RK-05",
+          "title": "Bounded inspection and device adapter",
+          "status": "in_progress",
+          "implementation": "Bounded read-only stdio inspection and pure policy helpers exist; no device-control adapter or operation surface is wired.",
+          "verification": "partial",
+          "dependencies": ["M0-RK-02", "M0-RK-04"],
+          "evidence": [
+            { "path": "scripts/roku/inspection.mjs", "note": "Read-only protocol inspection." },
+            { "path": "scripts/roku/device-policy.mjs", "note": "Policy helpers are not runtime enforcement." },
+            { "path": "scripts/roku/tests/inspection.test.mjs", "note": "Fake-transport and policy regression coverage." }
+          ],
+          "blockers": ["An authorized, policy-enforced device adapter remains unimplemented."]
+        },
+        {
+          "id": "M0-RK-06",
+          "title": "Runtime device leases and authorization",
+          "status": "blocked",
+          "implementation": "Pure target/lease/authorization helpers are not connected to atomic runtime lease storage or an authorized adapter.",
+          "verification": "blocked",
+          "dependencies": ["M0-RK-05"],
+          "evidence": [{ "path": "scripts/roku/device-policy.mjs", "note": "Non-wired policy helpers only." }],
+          "blockers": ["Implement and test exclusive runtime leases, authorization enforcement, and uncertain-operation reconciliation before enabling controls."]
+        },
+        {
+          "id": "M0-RK-07",
+          "title": "Setup and device-smoke workflows",
+          "status": "in_progress",
+          "implementation": "The read-only setup-inspection workflow exists; an authorized physical smoke workflow does not.",
+          "verification": "partial",
+          "dependencies": ["M0-RK-05", "M0-RK-06"],
+          "evidence": [
+            { "path": ".agents/workflows/roku-mcp-setup.json", "note": "Setup workflow and offline gates." },
+            { "path": "docs/operations/roku-mcp.md", "note": "Setup scope and physical verification blockers." }
+          ],
+          "blockers": ["Device smoke must wait for runtime authorization/leases, an adapter, and approved hardware access."]
+        },
+        {
+          "id": "M0-RK-08",
+          "title": "Device evidence schema and aggregation",
+          "status": "in_progress",
+          "implementation": "A strict schema and always-blocked physical-evidence record are integrated into setup runs; real device evidence collection is not implemented.",
+          "verification": "partial",
+          "dependencies": ["M0-RK-05", "M0-RK-07"],
+          "evidence": [
+            { "path": ".agents/schemas/roku-device-evidence.schema.json", "note": "Evidence shape and integrity constraints." },
+            { "path": "scripts/ai/runner.mjs", "note": "Setup runs bind blocked device evidence to source and commit." }
+          ],
+          "blockers": ["Physical device evidence collection requires the authorized adapter and smoke workflow."]
+        },
+        {
+          "id": "M0-RK-09",
+          "title": "Authorized physical smoke",
+          "status": "blocked",
+          "implementation": "No physical smoke test has been run or reported as passed.",
+          "verification": "blocked",
+          "dependencies": ["M0-RK-02", "M0-RK-05", "M0-RK-07"],
+          "evidence": [{ "path": "docs/operations/roku-mcp.md", "note": "Physical verification remains blocked; no device check was claimed." }],
+          "blockers": ["No verified named Roku target, model/OS, developer mode, maintenance window, or sideload-slot approval is recorded."]
+        },
+        {
+          "id": "M0-RK-10",
+          "title": "Runbooks, ADR, and CI",
+          "status": "in_progress",
+          "implementation": "The transport/security ADR, setup runbook, gap assessment, and offline CI definition exist.",
+          "verification": "partial",
+          "dependencies": ["M0-RK-01", "M0-RK-02", "M0-RK-09"],
+          "evidence": [
+            { "path": "docs/adr/0002-roku-mcp-inspection.md", "note": "Inspection-only transport and trust-boundary decision." },
+            { "path": "docs/operations/roku-mcp.md", "note": "Reproducible setup and recovery instructions." },
+            { "path": ".github/workflows/foundation.yml", "note": "Offline-capable CI workflow definition." }
+          ],
+          "blockers": ["Hosted CI execution and cross-platform parity have not been observed."]
+        }
+      ]
+    },
+    {
+      "id": "M1",
+      "title": "Roku Mock Prototype",
+      "outcome": "A native sideloaded mock Roku app with remote navigation, verified on the target device.",
+      "packages": [
+        {
+          "id": "M1.1",
+          "title": "Verify hardware, OS, SDK, and sideload",
+          "status": "blocked",
+          "implementation": "Target-device compatibility and a minimal-app sideload have not been verified.",
+          "verification": "blocked",
+          "dependencies": ["M0-RK-02", "M0-RK-06", "M0-RK-09"],
+          "evidence": [{ "path": "docs/development/implementation-status.md", "note": "Generated prerequisites and blocked state." }],
+          "blockers": ["Obtain authorized access to a named Roku and verify model, OS, developer mode, and sideload prerequisites."]
+        },
+        {
+          "id": "M1.2",
+          "title": "Scaffold the native Roku app",
+          "status": "blocked",
+          "implementation": "No native Roku application is implemented; the browser preview is a separate mock.",
+          "verification": "not_run",
+          "dependencies": ["M1.1"],
+          "evidence": [{ "path": "README.md", "note": "Generated status distinguishes the browser preview from a Roku app." }],
+          "blockers": ["Wait for the hardware/SDK compatibility gate before choosing or scaffolding the client."]
+        },
+        {
+          "id": "M1.3",
+          "title": "Design components and focus/navigation",
+          "status": "not_started",
+          "implementation": "Native app design system, components, and focus manager are not started.",
+          "verification": "not_run",
+          "dependencies": ["M1.2"],
+          "evidence": [],
+          "blockers": []
+        },
+        {
+          "id": "M1.4",
+          "title": "Implement mock-backed Roku screens",
+          "status": "not_started",
+          "implementation": "Native Home, Movies, Series, Search, and Details screens are not started.",
+          "verification": "not_run",
+          "dependencies": ["M1.2", "M1.3"],
+          "evidence": [{ "path": "apps/roku-preview/app.js", "note": "Browser-only mock preview exists but does not satisfy this package." }],
+          "blockers": []
+        },
+        {
+          "id": "M1.5",
+          "title": "Build/deploy scripts and remote tests",
+          "status": "not_started",
+          "implementation": "Native build/deploy scripts and remote navigation tests are not implemented.",
+          "verification": "not_run",
+          "dependencies": ["M1.2", "M1.3", "M1.4"],
+          "evidence": [],
+          "blockers": []
+        },
+        {
+          "id": "M1.6",
+          "title": "Run authorized device smoke",
+          "status": "blocked",
+          "implementation": "No native startup/navigation/focus smoke or current-commit device evidence exists.",
+          "verification": "blocked",
+          "dependencies": ["M0-RK-06", "M0-RK-07", "M0-RK-08", "M1.5"],
+          "evidence": [],
+          "blockers": ["Requires the M0-RK safety layer and authorized, compatible Roku hardware."]
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "Playable MVP",
+      "outcome": "A Roku client that browses and plays existing Jellyfin content with shared watch state.",
+      "packages": [
+        { "id": "M2.1", "title": "Experience API and contracts", "status": "not_started", "implementation": "NestJS API and OpenAPI contracts are not implemented.", "verification": "not_run", "dependencies": ["M1"], "evidence": [], "blockers": [] },
+        { "id": "M2.2", "title": "Jellyfin library and artwork adapter", "status": "not_started", "implementation": "No Jellyfin integration is implemented.", "verification": "not_run", "dependencies": ["M2.1"], "evidence": [], "blockers": [] },
+        { "id": "M2.3", "title": "Device pairing and credential lifecycle", "status": "not_started", "implementation": "Pairing and revocable Roku credentials are not implemented.", "verification": "not_run", "dependencies": ["M2.1"], "evidence": [], "blockers": [] },
+        { "id": "M2.4", "title": "Playback, progress, and resume", "status": "not_started", "implementation": "Playback negotiation, progress, resume, and completion are not implemented.", "verification": "not_run", "dependencies": ["M2.2", "M2.3"], "evidence": [], "blockers": [] },
+        { "id": "M2.5", "title": "Real-device playback compatibility", "status": "not_started", "implementation": "No Direct Play or transcoding behavior has been tested on a Roku.", "verification": "not_run", "dependencies": ["M1.6", "M2.4"], "evidence": [], "blockers": [] },
+        { "id": "M2.6", "title": "Playback and focus audits", "status": "not_started", "implementation": "No device focus/playback audit journeys are implemented.", "verification": "not_run", "dependencies": ["M2.5"], "evidence": [], "blockers": [] }
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Autonomous Catalog",
+      "outcome": "Authorized, validated media enters Jellyfin through durable catalog jobs.",
+      "packages": [
+        { "id": "M3.1", "title": "Metadata discovery and normalization", "status": "not_started", "implementation": "Metadata discovery adapters are not implemented.", "verification": "not_run", "dependencies": ["M2"], "evidence": [], "blockers": [] },
+        { "id": "M3.2", "title": "Household ranking and policies", "status": "not_started", "implementation": "Ranking and catalog policy are not implemented.", "verification": "not_run", "dependencies": ["M3.1"], "evidence": [], "blockers": [] },
+        { "id": "M3.3", "title": "Authorized acquisition adapters", "status": "not_started", "implementation": "No acquisition adapters or authorization policy are implemented.", "verification": "not_run", "dependencies": ["M3.2"], "evidence": [], "blockers": [] },
+        { "id": "M3.4", "title": "Media validation and reconciliation", "status": "not_started", "implementation": "Media validation, quarantine, import, and Jellyfin reconciliation are not implemented.", "verification": "not_run", "dependencies": ["M3.3"], "evidence": [], "blockers": [] },
+        { "id": "M3.5", "title": "Durable scheduler and audit log", "status": "not_started", "implementation": "Durable scheduling, bounded retries, and audit history are not implemented.", "verification": "not_run", "dependencies": ["M3.4"], "evidence": [], "blockers": [] }
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "Self-Maintaining Platform",
+      "outcome": "Observable, backed-up Windows services with safe dry-run retention.",
+      "packages": [
+        { "id": "M4.1", "title": "Storage budget and retention simulation", "status": "not_started", "implementation": "Storage budgeting and retention simulation are not implemented.", "verification": "not_run", "dependencies": ["M3"], "evidence": [], "blockers": [] },
+        { "id": "M4.2", "title": "Dry-run cleanup safeguards", "status": "not_started", "implementation": "Cleanup remains unimplemented; deletion must stay disabled and dry-run by default.", "verification": "not_run", "dependencies": ["M4.1"], "evidence": [], "blockers": [] },
+        { "id": "M4.3", "title": "Health, backup, and restore drills", "status": "not_started", "implementation": "Health reporting, backups, and restore drills are not implemented.", "verification": "not_run", "dependencies": ["M4.1"], "evidence": [], "blockers": [] },
+        { "id": "M4.4", "title": "Windows service deployment and rollback", "status": "not_started", "implementation": "Windows service installation and rollback are not implemented.", "verification": "not_run", "dependencies": ["M4.3"], "evidence": [], "blockers": [] },
+        { "id": "M4.5", "title": "Explicitly approved retirement enablement", "status": "not_started", "implementation": "Automated retirement is not enabled or implemented.", "verification": "not_run", "dependencies": ["M4.2", "M4.3", "M4.4"], "evidence": [], "blockers": [] }
+      ]
+    }
+  ],
+  "nextActions": [
+    { "packageId": "M0-RK-05", "action": "Design and test the narrowest approved device adapter while preserving the inspection-only boundary." },
+    { "packageId": "M0-RK-06", "action": "Implement atomic exclusive leases and explicit authorization before exposing device controls." },
+    { "packageId": "M0-RK-07", "action": "Add the authorized device-smoke workflow only after adapter and lease enforcement are testable." },
+    { "packageId": "M1.1", "action": "Collect the approved Roku model/OS, developer-mode, and sideload prerequisites; keep hardware claims blocked until observed." }
+  ]
+}

@@ -4,7 +4,7 @@
     {
       "id": "foundation-runbook", "type": "runbook", "version": 1,
       "description": "Bootstrap operation, evidence recovery and current implementation boundaries.", "tags": ["foundation", "operations"],
-      "entrypoint": "docs/operations/foundation.md", "resources": ["README.md", "docs/development/implementation-status.md"],
+      "entrypoint": "docs/operations/foundation.md", "resources": ["README.md", "docs/development/implementation-status.md", "docs/development/roadmap.json", ".agents/templates/task-brief.md"],
       "dependencies": ["foundation-adr"], "applicability": { "always": true, "keywords": [] }, "owner": "infrastructure",
       "permissions": { "write": [] }, "validations": ["registry"]
     },
@@ -23,12 +23,21 @@
       "permissions": { "write": [] }, "validations": ["registry", "foundation-tests"]
     },
     {
+      "id": "implementation-roadmap", "type": "script", "version": 1,
+      "description": "Validate the authoritative implementation roadmap and generate status summaries.",
+      "tags": ["roadmap", "status", "testing"], "entrypoint": "scripts/ai/roadmap.mjs",
+      "resources": ["docs/development/roadmap.json", ".agents/schemas/roadmap.schema.json", "scripts/ai/tests/roadmap.test.mjs", "README.md", "docs/development/implementation-status.md"],
+      "dependencies": ["core-behaviors", "foundation-tests"],
+      "applicability": { "always": false, "keywords": ["roadmap", "milestone", "implementation status", "progress"] },
+      "owner": "orchestrator", "permissions": { "write": [] }, "validations": ["roadmap-check", "roadmap-tests"]
+    },
+    {
       "id": "foundation-check", "type": "workflow", "version": 1,
       "description": "Allowlisted M0 validation with signed, source-bound evidence.", "tags": ["foundation", "m0"],
       "entrypoint": ".agents/workflows/foundation-check.json", "resources": [".agents/workflows/foundation-check.md"],
       "dependencies": ["workflow-runner", "quality"],
       "applicability": { "always": false, "keywords": ["foundation", "m0", "implement", "validate", "test", "ci", "bootstrap"] }, "owner": "orchestrator",
-      "permissions": { "write": [".artifacts/tasks"] }, "validations": ["registry", "foundation-tests"]
+      "permissions": { "write": [".artifacts/tasks"] }, "validations": ["registry", "foundation-tests", "roadmap-check", "roadmap-tests"]
     },
     {
       "id": "workflow-runner", "type": "script", "version": 1,

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, existsSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,8 +22,13 @@ function git(root, ...args) {
 function fixture(t, { committed = false, testBody } = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'household-m0-'));
   t.after(() => rmSync(root, { recursive: true, force: true, maxRetries: 3 }));
-  for (const entry of ['.agents', '.github', '.vscode', 'apps', 'scripts', 'docs', 'README.md', 'AGENTS.md', '.gitignore', '.gitattributes', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
+  for (const entry of ['.agents', '.github', '.vscode', 'apps', 'scripts', 'docs', 'README.md', 'AGENTS.md', '.mcp.json', 'household_streaming_platform_specification.md', '.gitignore', '.gitattributes', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
     if (existsSync(path.join(source, entry))) cpSync(path.join(source, entry), path.join(root, entry), { recursive: true });
+  }
+  for (const dependency of ['ajv', 'fast-deep-equal', 'fast-uri', 'json-schema-traverse', 'require-from-string']) {
+    const target = path.join(root, 'node_modules', dependency);
+    mkdirSync(path.dirname(target), { recursive: true });
+    cpSync(path.join(source, 'node_modules', dependency), target, { recursive: true, dereference: true });
   }
   // The runner integration uses a small isolated test, not recursive execution of this suite.
   writeFileSync(path.join(root, 'scripts/ai/tests/foundation.test.mjs'), testBody ??
