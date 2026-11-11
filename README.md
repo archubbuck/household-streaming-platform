@@ -14,6 +14,8 @@ The Roku SDK tooling is pinned at 2.19.1. Official skills, signed static availab
 
 No Roku application, device-control adapter, API, database, Jellyfin integration, acquisition or deletion is implemented. **The platform and full M0-RK integration are not complete.** No media or existing Jellyfin configuration is modified. See the [gap assessment](docs/development/roku-mcp-gap-analysis.md).
 
+An offline browser preview of the Roku-style mock UI is available with `pnpm preview:roku`. It uses deterministic local fixtures and browser keyboard controls to inspect layout and navigation; it is not the Roku app/runtime and does not establish device focus or playback behavior. The native Roku SDK and hardware choice remain gated.
+
 ## Prerequisites
 
 - Node.js 24 LTS (bootstrap tooling only; Roku SDK compatibility still requires verification).

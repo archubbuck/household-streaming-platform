@@ -2,6 +2,14 @@
   "version": 1,
   "capabilities": [
     {
+      "id": "roku-mock-preview", "type": "script", "version": 1,
+      "description": "Offline browser preview of the Roku mock UI; not a Roku runtime or device validation.",
+      "tags": ["roku", "mock", "preview"], "entrypoint": "apps/roku-preview/server.mjs",
+      "resources": ["apps/roku-preview/index.html", "apps/roku-preview/styles.css", "apps/roku-preview/app.js", "scripts/roku/tests/ui-preview.test.mjs", ".vscode/tasks.json"],
+      "dependencies": ["roku", "quality"], "applicability": { "always": false, "keywords": ["roku preview", "mock ui", "browser preview"] }, "owner": "roku",
+      "permissions": { "write": [] }, "validations": ["registry", "ui-preview-tests"]
+    },
+    {
       "id": "roku-inspection", "type": "script", "version": 1,
       "description": "Bounded read-only SDK inspection and receipt-gated editor bridge, with no device operation surface.",
       "tags": ["roku", "mcp"], "entrypoint": "scripts/roku/check.mjs",

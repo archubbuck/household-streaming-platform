@@ -8,6 +8,8 @@ Only read-only SDK inspection is enabled. No app, deployment, remote-key, screen
 
 The `roku-mcp-setup` workflow includes `.artifacts/tasks/<run-id>/roku-device/evidence.json` in its signed artifact hashes. Until an authorized device workflow exists, this record is always `blocked`, leaves device/lease fields unobserved, and is not evidence that a physical check ran. Verification validates its schema and binds it to the task run, commit and source digest.
 
+For offline UI iteration, start the browser mock with `pnpm preview:roku` and open the forwarded port (default `4173`). The preview uses local fixture state; it does not call `rk`, Jellyfin or the Roku. Arrow keys move focus, Enter selects, and Escape backs out. Its rendering is not evidence of native Roku compatibility.
+
 ## Reproducible setup
 
 1. Use Node 24 and `npx --yes pnpm@10.11.0 install --frozen-lockfile --ignore-scripts`. No global package manager or firewall changes are required.

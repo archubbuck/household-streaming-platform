@@ -16,6 +16,8 @@ The existing M0 registry, runner, signed receipts and evidence are retained. The
 | M0-RK-09 | No approved target or app | Physical smoke blocked | Status/runbook | Needs named OS-16+ development TV, developer mode, secure credentials, maintenance window, sideload-slot approval, adapter/lease implementation and an app |
 | M0-RK-10 | Windows/Linux CI definition | Offline regression coverage, runbook, transport/security ADR | CI, docs | Local Windows results recorded separately from hosted CI |
 
+An offline browser mock preview exists for visual and keyboard-flow iteration. It is not M1.1/M1.2 acceptance: native SDK compatibility, Roku rendering, and physical remote behavior remain unverified.
+
 ## Compatibility observations
 
 - Official published `@roku-sdk/tooling@2.19.1` requires Node >=24 and npm >=8.5; its package metadata does not require pnpm 11. The getting-started documentation recommends pnpm 11. Keep M0's pnpm 10.11 until an app-build spike justifies migration.

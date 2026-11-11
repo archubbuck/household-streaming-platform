@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Launch Roku mock preview",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"preview:roku"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

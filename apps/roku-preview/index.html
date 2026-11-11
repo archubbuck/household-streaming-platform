@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101410">
+    <title>Morrow | Roku UI Mock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header class="preview-bar">
+      <a class="preview-brand" href="/" aria-label="Morrow preview home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>MORROW <small>ROKU MOCK</small></span>
+      </a>
+      <div class="preview-state"><span class="state-light"></span> LOCAL FIXTURES <span class="state-divider"></span> 16:9</div>
+      <button class="preview-reset" type="button" data-action="reset">Reset preview</button>
+    </header>
+
+    <main class="preview-main">
+      <div class="screen-frame">
+        <div class="screen" id="screen" data-source="mock">
+          <aside class="sidebar">
+            <div class="app-wordmark">morrow<span>.</span></div>
+            <nav class="primary-nav" id="primary-nav" aria-label="Main navigation"></nav>
+            <div class="sidebar-bottom">
+              <span class="profile-mark">M</span>
+              <span class="profile-name">MORROW HOME</span>
+            </div>
+          </aside>
+          <section class="main-panel">
+            <header class="topbar">
+              <div class="topbar-context"><span class="live-dot"></span><span id="screen-kicker">A GOOD EVENING FOR A STORY</span></div>
+              <div class="topbar-actions">
+                <button class="round-action" type="button" data-action="open-search" data-row="1" data-index="0" aria-label="Search" title="Search">⌕</button>
+                <button class="avatar-action" type="button" data-action="profile" data-row="1" data-index="1" aria-label="Household profile" title="Household profile">M</button>
+              </div>
+            </header>
+            <div class="screen-content" id="screen-content"></div>
+          </section>
+          <div class="overlay-root" id="overlay-root"></div>
+        </div>
+      </div>
+      <footer class="preview-footer">
+        <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> <span>REMOTE</span></span>
+        <span><kbd>ENTER</kbd> SELECT</span>
+        <span><kbd>ESC</kbd> BACK</span>
+        <span class="footer-note">MOCK ONLY · NO DEVICE OR SERVICE CONNECTION</span>
+      </footer>
+    </main>
+  </body>
+</html>

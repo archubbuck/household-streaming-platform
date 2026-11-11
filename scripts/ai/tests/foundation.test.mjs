@@ -22,7 +22,7 @@ function git(root, ...args) {
 function fixture(t, { committed = false, testBody } = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'household-m0-'));
   t.after(() => rmSync(root, { recursive: true, force: true, maxRetries: 3 }));
-  for (const entry of ['.agents', '.github', '.vscode', 'scripts', 'docs', 'README.md', 'AGENTS.md', '.gitignore', '.gitattributes', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
+  for (const entry of ['.agents', '.github', '.vscode', 'apps', 'scripts', 'docs', 'README.md', 'AGENTS.md', '.gitignore', '.gitattributes', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
     if (existsSync(path.join(source, entry))) cpSync(path.join(source, entry), path.join(root, entry), { recursive: true });
   }
   // The runner integration uses a small isolated test, not recursive execution of this suite.

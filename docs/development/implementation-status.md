@@ -20,6 +20,7 @@
 - Added a strict Roku device-evidence schema with synthetic offline tests. It requires commit/source binding, hashed device identity, checksummed relative artifacts and lease events; unknown observations remain null/blocked, and a passed result requires complete device/tool observations plus an acquired-and-released lease. This validates structure only, not physical truth.
 - The `roku-mcp-setup` run now attaches a schema-validated, always-blocked Roku evidence record to the existing signed artifact set. It binds the current run/commit/source and only copies observed tooling metadata; it contains no physical-device result.
 - Added non-wired Roku policy helpers for explicit alias resolution, lease-acquisition/release decisions, and operation authorization. Synthetic tests cover ambiguous targets, stale leases, maintenance windows, sideload replacement approval, high-risk operations and factory-reset denial. These helpers are not an atomic lease store, an authorization attestation system or an enabled device path.
+- Added a browser-only Roku mock preview with deterministic catalog fixtures and arrow/Enter/Escape navigation. It is not a native Roku application and does not verify firmware rendering, physical focus or playback.
 - Existing runner aggregates inspection results into signed source/commit-bound artifacts. Missing tooling remains blocked; default foundation tests remain offline.
 - 52 local regression tests passed during implementation, including new fake-transport, missing SDK/config, drift, timeout, output suppression, protocol, schema and workflow checks. These are not physical tests. Final workflow verification must be rerun on the submitted commit.
 
@@ -28,7 +29,7 @@
 - GitHub remote and tracking branch are configured. Hosted CI execution and cross-platform parity are reported separately from local results; branch protection is not configured by this implementation.
 - No fresh-editor-chat enforcement experiment has been performed. AGENTS/Copilot instructions direct new chats; deterministic rejection is tested at the workflow boundary.
 - No generic agent-step workflow executor, device-control adapter, atomic runtime lease enforcement, authorization attestation, physical-device evidence collection, smoke workflow, scaffolders, Roku build/deploy scripts, API or product tests exist. Do not advertise planned commands as usable.
-- No app/package implementations exist; the pnpm workspace only reserves their future locations.
+- No native Roku app/package implementations exist; the browser preview is a separate mock and the pnpm workspace only reserves app package locations.
 - Roku hardware checks are blocked, not passed. No Jellyfin, media, acquisition or Windows production services were touched.
 
 ## Next: finish M0-RK safety layer, then M1 hardware gate and mock prototype
