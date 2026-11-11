@@ -10,9 +10,9 @@ The existing M0 registry, runner, signed receipts and evidence are retained. The
 | M0-RK-03 | Strict manifest coverage | Install official context once in SDK-prescribed locations; register without edits | `.agents/skills`, Roku manifest | SDK context drift check and registry validation |
 | M0-RK-04 | Signed task/registry receipts | Include static SDK/config/context observations; distinguish unknown tool/device facts | Discovery and inspection modules | Missing SDK, config and drift regression tests |
 | M0-RK-05 | Script-only command allowlist | Bounded read-only stdio inspector; no device-control adapter yet | Roku scripts and tests | Fake transport and actual local advertisement checks; full adapter pending |
-| M0-RK-06 | No device mutation surface | Deny every device operation at editor inspection boundary | Inspection server | Negative policy tests; leases not implemented, so control remains disabled |
+| M0-RK-06 | No device mutation surface | Deny every device operation at editor inspection boundary | Inspection server | Pure explicit-target/lease/authorization policy and synthetic negative tests added; atomic storage, attested approvals and runtime enforcement pending; controls remain disabled |
 | M0-RK-07 | Foundation workflow | Add read-only setup workflow; preserve blocked exit status | Runner, workflow manifest | Runner tests; smoke workflow pending |
-| M0-RK-08 | Signed source-bound task artifacts | Aggregate preflight through existing checks | Existing evidence runner | Strict Roku device-evidence schema and synthetic negative tests added; runner aggregation/hash verification pending |
+| M0-RK-08 | Signed source-bound task artifacts | Aggregate preflight through existing checks | Existing evidence runner | Schema-validated blocked Roku record is included in signed setup artifacts; source/commit binding and tamper rejection tested; real-device evidence collection pending |
 | M0-RK-09 | No approved target or app | Physical smoke blocked | Status/runbook | Needs named OS-16+ development TV, developer mode, secure credentials, maintenance window, sideload-slot approval, adapter/lease implementation and an app |
 | M0-RK-10 | Windows/Linux CI definition | Offline regression coverage, runbook, transport/security ADR | CI, docs | Local Windows results recorded separately from hosted CI |
 

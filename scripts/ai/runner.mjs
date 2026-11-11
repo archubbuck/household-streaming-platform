@@ -38,6 +38,34 @@ export function sourceState(root) {
   return { commitSha, sourceDigest: digest(entries), clean: Boolean(commitSha) && status.length === 0 };
 }
 
+function blockedRokuDeviceEvidence(runId, source, report) {
+  const observation = report?.observation ?? {};
+  return {
+    version: 1,
+    taskId: runId,
+    commitSha: source.commitSha,
+    sourceDigest: source.sourceDigest,
+    device: { alias: null, model: null, osVersion: null, deviceIdHash: null },
+    tooling: {
+      rokuSdkVersion: observation.sdkVersion ?? null,
+      rkVersion: null,
+      mcpTransport: observation.transport ?? null,
+      backend: observation.actualBackend ?? null,
+      toolCatalogFingerprint: observation.toolCatalogFingerprint ?? null,
+    },
+    validation: {
+      status: 'blocked',
+      reason: 'This workflow performs tooling inspection only; no physical Roku validation was run',
+      assertions: [],
+    },
+    artifacts: { screenshots: [], uiHierarchy: [], logs: [], buildManifest: null },
+    deviceLockId: null,
+    leaseEvents: [],
+    limitations: ['No device target was verified', 'No device adapter or physical operation was invoked'],
+    completedAt: null,
+  };
+}
+
 function execute(root, command) {
   if (command === 'roku-preflight') {
     const output = inspectRoku(root);
@@ -98,6 +126,12 @@ export function runWorkflow(root, { workflow: id, session, task, inputs }) {
       reason: result.exitCode === 0 ? '' : result.exitCode === 2 ? 'Registered check blocked; inspect evidence' : 'Registered check failed; inspect evidence',
     });
   }
+  if (id === 'roku-mcp-setup') {
+    const preflight = readJson(safePath(root, `${base}/evidence/roku-preflight.json`)).output;
+    const deviceEvidence = blockedRokuDeviceEvidence(runId, before, preflight);
+    validateSchema(root, '.agents/schemas/roku-device-evidence.schema.json', deviceEvidence);
+    artifact('roku-device/evidence.json', deviceEvidence);
+  }
   const after = sourceState(root);
   const unchanged = canonical(before) === canonical(after);
   const finishedAt = new Date().toISOString();
@@ -145,10 +179,19 @@ export function verifyEvidence(root, { run, session, task }) {
   if (!receipt.selectedCapabilities.includes(workflow.id)) fail('Evidence workflow not selected by discovery');
   if (taskDocument.runId !== run || taskDocument.sessionId !== session || taskDocument.workflow !== report.workflow || taskDocument.taskFingerprint !== receipt.taskFingerprint) fail('Task evidence scope mismatch');
   const expectedFiles = ['task.json', 'discovery.json', 'context.json', 'plan.json', 'execution.json', 'summary.md',
-    ...workflow.completion.require.map((id) => `evidence/${id}.json`)].map((file) => `${base}/${file}`).sort();
+    ...workflow.completion.require.map((id) => `evidence/${id}.json`),
+    ...(workflow.id === 'roku-mcp-setup' ? ['roku-device/evidence.json'] : [])].map((file) => `${base}/${file}`).sort();
   if (canonical(Object.keys(report.artifactHashes).sort()) !== canonical(expectedFiles)) fail('Missing or unexpected evidence artifacts');
   for (const [file, hash] of Object.entries(report.artifactHashes)) {
     if (!file.startsWith(`${base}/`) || sha256(readFileSync(safePath(root, file))) !== hash) fail('Evidence artifact hash mismatch');
+  }
+  if (workflow.id === 'roku-mcp-setup') {
+    const deviceEvidence = readJson(safePath(root, `${base}/roku-device/evidence.json`));
+    validateSchema(root, '.agents/schemas/roku-device-evidence.schema.json', deviceEvidence);
+    if (deviceEvidence.taskId !== run || deviceEvidence.commitSha !== report.commitSha ||
+        deviceEvidence.sourceDigest !== report.sourceDigest || deviceEvidence.validation.status !== 'blocked') {
+      fail('Roku device evidence scope or status mismatch');
+    }
   }
   if (canonical(readJson(safePath(root, `${base}/discovery.json`))) !== canonical(receipt)) fail('Discovery artifact mismatch');
   if (canonical(report.checks.map((check) => check.id).sort()) !== canonical([...workflow.completion.require].sort())) fail('Missing or duplicate required checks');

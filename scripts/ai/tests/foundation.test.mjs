@@ -231,10 +231,18 @@ test('offline Roku setup preserves blocked status and signed evidence without di
   const scope = 'Validate Roku MCP setup';
   const receipt = discover(root, scope);
   const report = runWorkflow(root, { workflow: 'roku-mcp-setup', session: receipt.sessionId, task: scope, inputs: {} });
+  const deviceEvidencePath = `.artifacts/tasks/${report.runId}/roku-device/evidence.json`;
+  const deviceEvidence = readJson(path.join(root, deviceEvidencePath));
+  assert.equal(deviceEvidence.validation.status, 'blocked');
+  assert.equal(deviceEvidence.commitSha, report.commitSha);
+  assert.equal(deviceEvidence.sourceDigest, report.sourceDigest);
+  assert.equal(Object.hasOwn(report.artifactHashes, deviceEvidencePath), true);
   assert.equal(report.checks.find((check) => check.id === 'roku-preflight').status, 'blocked');
   assert.equal(report.checks.find((check) => check.id === 'roku-preflight').exitCode, 2);
   assert.equal(reportExitCode(report), 2);
   assert.equal(verifyEvidence(root, { run: report.runId, session: receipt.sessionId, task: scope }).readyForMerge, false);
+  writeJson(root, deviceEvidencePath, { ...deviceEvidence, validation: { ...deviceEvidence.validation, status: 'passed' } });
+  assert.throws(() => verifyEvidence(root, { run: report.runId, session: receipt.sessionId, task: scope }), /artifact hash mismatch/);
   assert.equal(run(root).report.readyForMerge, true);
 });
 

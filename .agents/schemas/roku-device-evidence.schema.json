@@ -6,7 +6,7 @@
   "properties": {
     "version": { "const": 1 },
     "taskId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
-    "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+    "commitSha": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
     "sourceDigest": { "$ref": "#/definitions/sha256" },
     "device": {
       "type": "object",
@@ -124,6 +124,7 @@
           }
         },
         "validation": { "type": "object", "properties": { "assertions": { "type": "array", "contains": { "type": "object", "properties": { "status": { "const": "passed" } }, "required": ["status"] } } } },
+        "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
         "deviceLockId": { "type": "string", "minLength": 1 },
         "leaseEvents": {
           "type": "array",

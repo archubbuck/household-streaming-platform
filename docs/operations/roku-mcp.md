@@ -4,6 +4,10 @@
 
 Only read-only SDK inspection is enabled. No app, deployment, remote-key, screenshot, device-registration, signing, reboot or acquisition command is available through the repository bridge. Vendor skills describe a larger SDK surface; they do not authorize any operation. Never use an active/default TV implicitly or expose the raw SDK to bypass missing repository safety controls.
 
+`scripts/roku/device-policy.mjs` contains pure, non-wired policy decisions for explicit target resolution, lease transitions and operation authorization. It does not provide atomic lease storage, verify human approvals, call an adapter or enable any device operation. Its synthetic tests validate policy inputs only.
+
+The `roku-mcp-setup` workflow includes `.artifacts/tasks/<run-id>/roku-device/evidence.json` in its signed artifact hashes. Until an authorized device workflow exists, this record is always `blocked`, leaves device/lease fields unobserved, and is not evidence that a physical check ran. Verification validates its schema and binds it to the task run, commit and source digest.
+
 ## Reproducible setup
 
 1. Use Node 24 and `npx --yes pnpm@10.11.0 install --frozen-lockfile --ignore-scripts`. No global package manager or firewall changes are required.

@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { digest, sha256, discover, verifySession, validateSchema } from '../../ai/core.mjs';
 import { observeRoku, inspectProtocol, inspectRoku, expectedEditorConfig } from '../inspection.mjs';
 import { handleRequest } from '../editor-mcp.mjs';
+import { resolveDeviceTarget, decideLeaseAcquisition, decideLeaseRelease, authorizeDeviceOperation } from '../device-policy.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 // Test-only advertised tool: deliberately not presented as a verified Roku operation.
@@ -232,6 +233,59 @@ test('device evidence keeps offline observations blocked and only accepts comple
     { ...evidence, validation: { ...evidence.validation, status: 'passed' } },
   ];
   for (const invalid of invalidEvidence) assert.throws(() => validateSchema(source, schema, invalid), /Schema validation failed/);
+});
+
+test('device policy requires explicit unique aliases and never returns raw device identifiers', () => {
+  const identityHash = 'a'.repeat(64);
+  const configuredTargets = [{ alias: 'dev-tv', deviceIdHash: identityHash }];
+  const observedDevices = [{ deviceIdHash: identityHash, model: 'test-model', osVersion: '16.0', deviceId: 'raw-secret' }];
+  assert.equal(resolveDeviceTarget({ configuredTargets, observedDevices }).reasonCode, 'TARGET_REQUIRED');
+  assert.equal(resolveDeviceTarget({ configuredTargets: [...configuredTargets, ...configuredTargets], observedDevices, alias: 'dev-tv' }).reasonCode, 'TARGET_ALIAS_AMBIGUOUS');
+  assert.equal(resolveDeviceTarget({ configuredTargets, observedDevices: [], alias: 'dev-tv' }).reasonCode, 'TARGET_NOT_OBSERVED');
+  assert.equal(resolveDeviceTarget({ configuredTargets, observedDevices: [...observedDevices, ...observedDevices], alias: 'dev-tv' }).reasonCode, 'TARGET_OBSERVATION_AMBIGUOUS');
+  const resolved = resolveDeviceTarget({ configuredTargets, observedDevices, alias: 'dev-tv' });
+  assert.equal(resolved.allowed, true);
+  assert.equal(Object.hasOwn(resolved.target, 'deviceId'), false);
+});
+
+test('lease policy denies occupied targets and refuses stale reclaim without verified inactivity', () => {
+  const identityHash = 'a'.repeat(64);
+  const base = { leases: [], targetDeviceIdHash: identityHash, taskId: 'task-1', agentId: 'agent-1', leaseId: 'lease-2', now: 1000, ttlMs: 100, maxLeaseMs: 200 };
+  const acquired = decideLeaseAcquisition(base);
+  assert.equal(acquired.allowed, true);
+  assert.equal(acquired.lease.expiresAt, 1100);
+  assert.equal(decideLeaseAcquisition({ ...base, leases: [acquired.lease], leaseId: 'lease-3' }).reasonCode, 'LEASE_BUSY');
+
+  const expired = { ...acquired.lease, expiresAt: 900 };
+  assert.equal(decideLeaseAcquisition({ ...base, leases: [expired], leaseId: 'lease-3' }).reasonCode, 'LEASE_STATE_UNVERIFIED');
+  assert.equal(decideLeaseAcquisition({ ...base, leases: [expired], leaseId: 'lease-3', activeOperationState: 'active' }).reasonCode, 'LEASE_OPERATION_ACTIVE');
+  const reclaimed = decideLeaseAcquisition({ ...base, leases: [expired], leaseId: 'lease-3', activeOperationState: 'inactive' });
+  assert.equal(reclaimed.allowed, true);
+  assert.equal(reclaimed.reclaimedLeaseId, 'lease-2');
+  assert.equal(decideLeaseAcquisition({ ...base, ttlMs: 201 }).reasonCode, 'LEASE_REQUEST_INVALID');
+  assert.equal(decideLeaseAcquisition({ ...base, leases: [{ leaseId: 'lease-2' }] }).reasonCode, 'LEASE_REQUEST_INVALID');
+  assert.equal(decideLeaseAcquisition({ ...base, now: Number.MAX_SAFE_INTEGER - 1 }).reasonCode, 'LEASE_REQUEST_INVALID');
+  assert.equal(decideLeaseRelease({ lease: acquired.lease, leaseId: 'lease-1', targetDeviceIdHash: identityHash, taskId: 'task-1', agentId: 'agent-1' }).reasonCode, 'LEASE_OWNER_MISMATCH');
+});
+
+test('device operation policy requires matching authorization, lease, maintenance window, and sideload approval', () => {
+  const identityHash = 'a'.repeat(64);
+  const now = 1000;
+  const target = { alias: 'dev-tv', deviceIdHash: identityHash };
+  const lease = { leaseId: 'lease-1', targetDeviceIdHash: identityHash, taskId: 'task-1', agentId: 'agent-1', expiresAt: 1200 };
+  const authorization = { approved: true, approvalId: 'approval-1', approvedBy: 'owner', operation: 'deployApp', taskId: 'task-1', targetDeviceIdHash: identityHash, expiresAt: 1100 };
+  const maintenanceWindow = { startsAt: 900, endsAt: 1100 };
+  const input = { operation: 'deployApp', target, taskId: 'task-1', agentId: 'agent-1', now, authorization, lease, maintenanceWindow };
+
+  assert.equal(authorizeDeviceOperation(input).reasonCode, 'SIDELOAD_REPLACEMENT_NOT_APPROVED');
+  assert.equal(authorizeDeviceOperation({ ...input, sideloadReplacementApproved: true }).allowed, true);
+  assert.equal(authorizeDeviceOperation({ ...input, lease: null, sideloadReplacementApproved: true }).reasonCode, 'LEASE_REQUIRED');
+  assert.equal(authorizeDeviceOperation({ ...input, maintenanceWindow: null, sideloadReplacementApproved: true }).reasonCode, 'MAINTENANCE_WINDOW_REQUIRED');
+  assert.equal(authorizeDeviceOperation({ ...input, authorization: { ...authorization, targetDeviceIdHash: 'b'.repeat(64) }, sideloadReplacementApproved: true }).reasonCode, 'OPERATION_NOT_AUTHORIZED');
+  assert.equal(authorizeDeviceOperation({ ...input, operation: 'factoryReset', authorization: { ...authorization, operation: 'factoryReset', highRiskApproved: true }, sideloadReplacementApproved: true, maintenanceWindow, }).reasonCode, 'OPERATION_NEVER_AUTOMATED');
+  assert.equal(authorizeDeviceOperation({ ...input, operation: 'startLogCapture', authorization: { ...authorization, operation: 'startLogCapture' }, lease: null }).reasonCode, 'LEASE_REQUIRED');
+  assert.equal(authorizeDeviceOperation({ ...input, operation: 'stopLogCapture', authorization: { ...authorization, operation: 'stopLogCapture' }, maintenanceWindow: null }).allowed, true);
+  assert.equal(authorizeDeviceOperation({ ...input, operation: 'unknownOperation' }).reasonCode, 'OPERATION_UNSUPPORTED');
 });
 
 test('editor exposes only the inspection tool; every SDK control is denied', () => {
