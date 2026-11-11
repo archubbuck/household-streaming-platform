@@ -192,6 +192,48 @@ test('schema forbids invented physical success or extra raw output', (t) => {
   assert.throws(() => validateSchema(source, '.agents/schemas/roku-inspection.schema.json', report), /Schema validation failed/);
 });
 
+test('device evidence keeps offline observations blocked and only accepts complete physical success', () => {
+  const hash = 'a'.repeat(64);
+  const evidence = {
+    version: 1,
+    taskId: 'TASK-0042',
+    commitSha: 'b'.repeat(40),
+    sourceDigest: hash,
+    device: { alias: null, model: null, osVersion: null, deviceIdHash: null },
+    tooling: { rokuSdkVersion: null, rkVersion: null, mcpTransport: 'stdio', backend: null, toolCatalogFingerprint: null },
+    validation: { status: 'blocked', reason: 'Device access is unavailable', assertions: [] },
+    artifacts: { screenshots: [], uiHierarchy: [], logs: [], buildManifest: null },
+    deviceLockId: null,
+    leaseEvents: [],
+    limitations: ['Synthetic schema fixture; no device check was run'],
+    completedAt: null,
+  };
+  const schema = '.agents/schemas/roku-device-evidence.schema.json';
+  assert.doesNotThrow(() => validateSchema(source, schema, evidence));
+
+  const completeEvidence = {
+    ...evidence,
+    device: { alias: 'test-roku', model: 'synthetic-model', osVersion: '16.0', deviceIdHash: hash },
+    tooling: { rokuSdkVersion: '2.19.1', rkVersion: '2.19.1', mcpTransport: 'stdio', backend: 'stdio', toolCatalogFingerprint: hash },
+    validation: { status: 'passed', reason: null, assertions: [{ name: 'synthetic smoke assertion', status: 'passed' }] },
+    deviceLockId: 'synthetic-lease',
+    leaseEvents: [
+      { leaseId: 'synthetic-lease', event: 'acquired', taskId: evidence.taskId, agentId: 'test-agent', targetDeviceIdHash: hash, occurredAt: '2026-11-11T00:00:00Z', expiresAt: '2026-11-11T00:30:00Z' },
+      { leaseId: 'synthetic-lease', event: 'released', taskId: evidence.taskId, agentId: 'test-agent', targetDeviceIdHash: hash, occurredAt: '2026-11-11T00:10:00Z', expiresAt: null },
+    ],
+    completedAt: '2026-11-11T00:10:00Z',
+  };
+  assert.doesNotThrow(() => validateSchema(source, schema, completeEvidence));
+
+  const invalidEvidence = [
+    { ...evidence, device: { ...evidence.device, deviceIdHash: 'raw-device-id' } },
+    { ...evidence, artifacts: { ...evidence.artifacts, logs: [{ path: '../secrets.txt', sha256: hash }] } },
+    { ...evidence, leaseEvents: [{ leaseId: 'lease-1', event: 'reclaimed', taskId: evidence.taskId, agentId: 'agent-1', targetDeviceIdHash: hash, occurredAt: '2026-11-11T00:00:00Z', expiresAt: null, verifiedNoActiveOperation: false }] },
+    { ...evidence, validation: { ...evidence.validation, status: 'passed' } },
+  ];
+  for (const invalid of invalidEvidence) assert.throws(() => validateSchema(source, schema, invalid), /Schema validation failed/);
+});
+
 test('editor exposes only the inspection tool; every SDK control is denied', () => {
   const listed = handleRequest(source, { jsonrpc: '2.0', id: 1, method: 'tools/list' });
   assert.deepEqual(listed.result.tools.map((tool) => tool.name), ['roku_mcp_check']);

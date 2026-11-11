@@ -12,7 +12,7 @@ The existing M0 registry, runner, signed receipts and evidence are retained. The
 | M0-RK-05 | Script-only command allowlist | Bounded read-only stdio inspector; no device-control adapter yet | Roku scripts and tests | Fake transport and actual local advertisement checks; full adapter pending |
 | M0-RK-06 | No device mutation surface | Deny every device operation at editor inspection boundary | Inspection server | Negative policy tests; leases not implemented, so control remains disabled |
 | M0-RK-07 | Foundation workflow | Add read-only setup workflow; preserve blocked exit status | Runner, workflow manifest | Runner tests; smoke workflow pending |
-| M0-RK-08 | Signed source-bound task artifacts | Aggregate preflight through existing checks | Existing evidence runner | Current-commit preflight evidence; physical evidence schema pending |
+| M0-RK-08 | Signed source-bound task artifacts | Aggregate preflight through existing checks | Existing evidence runner | Strict Roku device-evidence schema and synthetic negative tests added; runner aggregation/hash verification pending |
 | M0-RK-09 | No approved target or app | Physical smoke blocked | Status/runbook | Needs named OS-16+ development TV, developer mode, secure credentials, maintenance window, sideload-slot approval, adapter/lease implementation and an app |
 | M0-RK-10 | Windows/Linux CI definition | Offline regression coverage, runbook, transport/security ADR | CI, docs | Local Windows results recorded separately from hosted CI |
 

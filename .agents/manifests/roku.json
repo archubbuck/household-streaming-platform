@@ -5,7 +5,7 @@
       "id": "roku-inspection", "type": "script", "version": 1,
       "description": "Bounded read-only SDK inspection and receipt-gated editor bridge, with no device operation surface.",
       "tags": ["roku", "mcp"], "entrypoint": "scripts/roku/check.mjs",
-      "resources": ["scripts/roku/inspection.mjs", "scripts/roku/editor-mcp.mjs", ".agents/schemas/roku-inspection.schema.json", "scripts/roku/tests/inspection.test.mjs"],
+      "resources": ["scripts/roku/inspection.mjs", "scripts/roku/editor-mcp.mjs", ".agents/schemas/roku-inspection.schema.json", ".agents/schemas/roku-device-evidence.schema.json", "scripts/roku/tests/inspection.test.mjs"],
       "dependencies": ["roku-mcp", "discovery"], "applicability": { "always": false, "keywords": ["roku", "mcp", "implementation", "specification"] }, "owner": "infrastructure",
       "permissions": { "write": [] }, "validations": ["registry", "roku-tests"]
     },
