@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.11.0",
-  "engines": { "node": ">=24 <25" },
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "ai:discover": "node scripts/ai/cli.mjs discover",
     "ai:inventory": "node scripts/ai/cli.mjs inventory",
@@ -13,8 +15,15 @@
     "ai:verify-session": "node scripts/ai/cli.mjs verify-session",
     "ai:run": "node scripts/ai/cli.mjs run",
     "ai:verify": "node scripts/ai/cli.mjs verify",
-    "validate": "node scripts/ai/cli.mjs validate-registry",
-    "test": "node --test scripts/ai/tests/foundation.test.mjs"
+    "validate": "node scripts/ai/cli.mjs validate-registry && node scripts/ai/roadmap.mjs --check",
+    "test": "node --test scripts/ai/tests/foundation.test.mjs scripts/ai/tests/roadmap.test.mjs scripts/roku/tests/inspection.test.mjs scripts/roku/tests/ui-preview.test.mjs && pnpm --filter @household/experience-api build && pnpm --filter @household/experience-api test",
+    "roadmap:check": "node scripts/ai/roadmap.mjs --check",
+    "roadmap:write": "node scripts/ai/roadmap.mjs --write",
+    "roku:mcp:check": "node scripts/roku/check.mjs",
+    "preview:roku": "node apps/roku-preview/server.mjs"
   },
-  "devDependencies": { "ajv": "8.20.0" }
+  "devDependencies": {
+    "@roku-sdk/tooling": "2.19.1",
+    "ajv": "8.20.0"
+  }
 }

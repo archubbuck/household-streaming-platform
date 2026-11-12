@@ -8,6 +8,8 @@
 4. Carry the returned session ID and exact task into every workflow and verification command. A new chat requires a new receipt. Subagents must receive the receipt, validate it, and read applicable instructions, or discover independently.
 5. Only then plan and execute. Task or registry changes require fresh discovery. Never edit receipts or evidence to make a gate pass.
 
+Discovery includes Roku SDK/config/official-context observations. Registered, installed, advertised, callable and device-reachable are separate facts. The current editor bridge permits only receipt-bound read-only inspection; device control remains disabled pending target, lease, authorization and evidence enforcement. Vendor-generated skills do not override these restrictions. Offline Roku availability must not block unrelated foundation checks.
+
 If dependencies are missing, installing the pinned lockfile with `npx pnpm@10.11.0 install --frozen-lockfile` is a bootstrap-only action. If discovery fails, stop product work and report the blocker. Explicit repair requests may repair only the broken bootstrap, then must run discovery before any other work. Initial creation of this foundation is the one-time bootstrap case, not a successful historical discovery.
 
 ## Scope and trust boundary

@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "roku-sdk-inspection": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/roku/editor-mcp.mjs"]
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import Ajv from 'ajv';
+import { observeRoku } from '../roku/inspection.mjs';
 
 export const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 export const canonical = (value) => JSON.stringify(value, (_key, item) =>
@@ -17,6 +18,11 @@ export const commandAllowlist = {
   commands: {
     registry: { kind: 'internal', handler: 'validate-registry', timeoutMs: 10000, write: [] },
     'foundation-tests': { kind: 'node', args: ['--test', 'scripts/ai/tests/foundation.test.mjs'], timeoutMs: 120000, write: [] },
+    'roadmap-check': { kind: 'node', args: ['scripts/ai/roadmap.mjs', '--check'], timeoutMs: 10000, write: [] },
+    'roadmap-tests': { kind: 'node', args: ['--test', 'scripts/ai/tests/roadmap.test.mjs'], timeoutMs: 30000, write: [] },
+    'roku-tests': { kind: 'node', args: ['--test', 'scripts/roku/tests/inspection.test.mjs'], timeoutMs: 120000, write: [] },
+    'ui-preview-tests': { kind: 'node', args: ['--test', 'scripts/roku/tests/ui-preview.test.mjs'], timeoutMs: 30000, write: [] },
+    'roku-preflight': { kind: 'internal', handler: 'roku-preflight', timeoutMs: 45000, write: [] },
   },
 };
 
@@ -124,6 +130,7 @@ export function loadRegistry(root) {
   for (const file of inventory) if (!covered.has(file)) fail(`Unregistered capability file: ${file}`);
   const hashed = [...new Set([...manifests, ...covered, ...walk(root, '.github/workflows'),
     'package.json', 'pnpm-workspace.yaml', '.npmrc', '.gitignore',
+    ...(existsSync(path.join(root, '.gitattributes')) ? ['.gitattributes'] : []),
     ...(existsSync(path.join(root, 'pnpm-lock.yaml')) ? ['pnpm-lock.yaml'] : []),
     ...(existsSync(path.join(root, '.agents/commands.json')) ? ['.agents/commands.json'] : [])])].sort();
   const registryHash = digest(hashed.map((file) => [file, sha256(readFileSync(safePath(root, file)))]));
@@ -154,8 +161,8 @@ export function instructionPaths(registry, selected) {
 
 export const mandatoryGates = ['registry', 'foundation-tests', 'source-unchanged', 'commit-bound'];
 export const limitations = [
-  'Only the M0 foundation workflow is implemented; product workflows are unavailable.',
-  'Roku model, OS, SDK and sideload validation: blocked pending actual device verification.',
+  'Foundation and read-only Roku setup inspection workflows exist; device-control and product workflows remain unavailable.',
+  'Roku model, OS, SDK app-build compatibility and sideload validation: blocked pending authorized device verification.',
   'Jellyfin configuration, storage paths and authorized sources: unverified.',
 ];
 
@@ -190,6 +197,7 @@ export function discover(root, task, now = new Date()) {
     selectedCapabilities, instructions: instructionPaths(registry, selectedCapabilities), mandatoryGates,
     timestamp: now.toISOString(), expiresAt: new Date(now.getTime() + 86400000).toISOString(),
     missingCapabilities: limitations,
+    observations: [observeRoku(root, task)],
   };
   const receipt = { ...payload, signature: sign(root, payload, true) };
   writeJson(root, `.artifacts/sessions/${payload.sessionId}/discovery.json`, receipt, true);
@@ -208,6 +216,7 @@ export function verifySession(root, sessionId, task, now = new Date()) {
   const registry = loadRegistry(root);
   if (receipt.version !== 1 || receipt.sessionId !== sessionId || receipt.taskFingerprint !== sha256(task)) fail('Receipt task/session mismatch');
   if (receipt.registryHash !== registry.registryHash) fail('Registry changed; run fresh discovery');
+  if (canonical(receipt.observations) !== canonical([observeRoku(root, task)])) fail('SDK availability changed; run fresh discovery');
   const issued = Date.parse(receipt.timestamp);
   const expiry = Date.parse(receipt.expiresAt);
   if (!Number.isFinite(issued) || !Number.isFinite(expiry) || issued > now.getTime() || expiry <= now.getTime() || expiry - issued !== 86400000) fail('Receipt expired or invalid timestamp');

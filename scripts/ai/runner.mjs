@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { inspectRoku } from '../roku/inspection.mjs';
 import {
   canonical, commandAllowlist, digest, fail, loadRegistry, readJson, safePath, sha256,
   sign, validateId, validateSchema, validateWorkflowPolicy, verifySession, verifySignature, writeJson,
@@ -37,7 +38,40 @@ export function sourceState(root) {
   return { commitSha, sourceDigest: digest(entries), clean: Boolean(commitSha) && status.length === 0 };
 }
 
+function blockedRokuDeviceEvidence(runId, source, report) {
+  const observation = report?.observation ?? {};
+  return {
+    version: 1,
+    taskId: runId,
+    commitSha: source.commitSha,
+    sourceDigest: source.sourceDigest,
+    device: { alias: null, model: null, osVersion: null, deviceIdHash: null },
+    tooling: {
+      rokuSdkVersion: observation.sdkVersion ?? null,
+      rkVersion: null,
+      mcpTransport: observation.transport ?? null,
+      backend: observation.actualBackend ?? null,
+      toolCatalogFingerprint: observation.toolCatalogFingerprint ?? null,
+    },
+    validation: {
+      status: 'blocked',
+      reason: 'This workflow performs tooling inspection only; no physical Roku validation was run',
+      assertions: [],
+    },
+    artifacts: { screenshots: [], uiHierarchy: [], logs: [], buildManifest: null },
+    deviceLockId: null,
+    leaseEvents: [],
+    limitations: ['No device target was verified', 'No device adapter or physical operation was invoked'],
+    completedAt: null,
+  };
+}
+
 function execute(root, command) {
+  if (command === 'roku-preflight') {
+    const output = inspectRoku(root);
+    validateSchema(root, '.agents/schemas/roku-inspection.schema.json', output);
+    return { exitCode: output.status === 'passed' ? 0 : output.status === 'blocked' ? 2 : 1, output };
+  }
   if (command === 'registry') {
     try { return { exitCode: 0, output: { registryHash: loadRegistry(root).registryHash } }; }
     catch (error) { return { exitCode: 1, output: { reason: error.message } }; }
@@ -85,11 +119,18 @@ export function runWorkflow(root, { workflow: id, session, task, inputs }) {
     const stepStarted = new Date().toISOString();
     const result = execute(root, step.command);
     const evidencePath = artifact(`evidence/${step.id}.json`, result);
-    checks.push({ id: step.id, command: step.command === 'registry' ? ['internal:validate-registry'] : ['node', ...commandAllowlist.commands[step.command].args],
-      status: result.exitCode === 0 ? 'passed' : 'failed', exitCode: result.exitCode,
+    checks.push({ id: step.id, command: commandAllowlist.commands[step.command].kind === 'internal'
+      ? [`internal:${commandAllowlist.commands[step.command].handler}`] : ['node', ...commandAllowlist.commands[step.command].args],
+      status: result.exitCode === 0 ? 'passed' : result.exitCode === 2 ? 'blocked' : 'failed', exitCode: result.exitCode,
       startedAt: stepStarted, finishedAt: new Date().toISOString(), evidencePath,
-      reason: result.exitCode === 0 ? '' : 'Registered check failed; inspect evidence',
+      reason: result.exitCode === 0 ? '' : result.exitCode === 2 ? 'Registered check blocked; inspect evidence' : 'Registered check failed; inspect evidence',
     });
+  }
+  if (id === 'roku-mcp-setup') {
+    const preflight = readJson(safePath(root, `${base}/evidence/roku-preflight.json`)).output;
+    const deviceEvidence = blockedRokuDeviceEvidence(runId, before, preflight);
+    validateSchema(root, '.agents/schemas/roku-device-evidence.schema.json', deviceEvidence);
+    artifact('roku-device/evidence.json', deviceEvidence);
   }
   const after = sourceState(root);
   const unchanged = canonical(before) === canonical(after);
@@ -106,7 +147,7 @@ export function runWorkflow(root, { workflow: id, session, task, inputs }) {
   const readyForMerge = before.clean && checks.every((check) => check.status === 'passed');
   const summaryPath = `${base}/summary.md`;
   writeFileSync(safePath(root, summaryPath), [
-    '# Foundation validation', '', `- Run: ${runId}`, `- Session: ${session}`, `- Commit: ${before.commitSha ?? 'unborn'}`,
+    '# Engineering validation', '', `- Workflow: ${id}`, `- Run: ${runId}`, `- Session: ${session}`, `- Commit: ${before.commitSha ?? 'unborn'}`,
     `- Source digest: ${before.sourceDigest}`, `- Ready for merge: ${readyForMerge}`, '',
     ...checks.map((check) => `- ${check.id}: **${check.status}**${check.reason ? ` — ${check.reason}` : ''}`),
     '', 'Scope: engineering foundation only. Roku hardware and product functionality are not validated.', '',
@@ -138,10 +179,19 @@ export function verifyEvidence(root, { run, session, task }) {
   if (!receipt.selectedCapabilities.includes(workflow.id)) fail('Evidence workflow not selected by discovery');
   if (taskDocument.runId !== run || taskDocument.sessionId !== session || taskDocument.workflow !== report.workflow || taskDocument.taskFingerprint !== receipt.taskFingerprint) fail('Task evidence scope mismatch');
   const expectedFiles = ['task.json', 'discovery.json', 'context.json', 'plan.json', 'execution.json', 'summary.md',
-    ...workflow.completion.require.map((id) => `evidence/${id}.json`)].map((file) => `${base}/${file}`).sort();
+    ...workflow.completion.require.map((id) => `evidence/${id}.json`),
+    ...(workflow.id === 'roku-mcp-setup' ? ['roku-device/evidence.json'] : [])].map((file) => `${base}/${file}`).sort();
   if (canonical(Object.keys(report.artifactHashes).sort()) !== canonical(expectedFiles)) fail('Missing or unexpected evidence artifacts');
   for (const [file, hash] of Object.entries(report.artifactHashes)) {
     if (!file.startsWith(`${base}/`) || sha256(readFileSync(safePath(root, file))) !== hash) fail('Evidence artifact hash mismatch');
+  }
+  if (workflow.id === 'roku-mcp-setup') {
+    const deviceEvidence = readJson(safePath(root, `${base}/roku-device/evidence.json`));
+    validateSchema(root, '.agents/schemas/roku-device-evidence.schema.json', deviceEvidence);
+    if (deviceEvidence.taskId !== run || deviceEvidence.commitSha !== report.commitSha ||
+        deviceEvidence.sourceDigest !== report.sourceDigest || deviceEvidence.validation.status !== 'blocked') {
+      fail('Roku device evidence scope or status mismatch');
+    }
   }
   if (canonical(readJson(safePath(root, `${base}/discovery.json`))) !== canonical(receipt)) fail('Discovery artifact mismatch');
   if (canonical(report.checks.map((check) => check.id).sort()) !== canonical([...workflow.completion.require].sort())) fail('Missing or duplicate required checks');

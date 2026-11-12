@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "taskId", "commitSha", "sourceDigest", "device", "tooling", "validation", "artifacts", "deviceLockId", "leaseEvents", "limitations", "completedAt"],
+  "properties": {
+    "version": { "const": 1 },
+    "taskId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+    "commitSha": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+    "sourceDigest": { "$ref": "#/definitions/sha256" },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alias", "model", "osVersion", "deviceIdHash"],
+      "properties": {
+        "alias": { "type": ["string", "null"], "maxLength": 128 },
+        "model": { "type": ["string", "null"], "maxLength": 128 },
+        "osVersion": { "type": ["string", "null"], "maxLength": 64 },
+        "deviceIdHash": { "anyOf": [{ "$ref": "#/definitions/sha256" }, { "type": "null" }] }
+      }
+    },
+    "tooling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rokuSdkVersion", "rkVersion", "mcpTransport", "backend", "toolCatalogFingerprint"],
+      "properties": {
+        "rokuSdkVersion": { "type": ["string", "null"], "maxLength": 64 },
+        "rkVersion": { "type": ["string", "null"], "maxLength": 64 },
+        "mcpTransport": { "enum": ["stdio", "http", null] },
+        "backend": { "enum": ["stdio", "persistent-server", null] },
+        "toolCatalogFingerprint": { "anyOf": [{ "$ref": "#/definitions/sha256" }, { "type": "null" }] }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason", "assertions"],
+      "properties": {
+        "status": { "enum": ["passed", "failed", "blocked"] },
+        "reason": { "type": ["string", "null"], "maxLength": 500 },
+        "assertions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "status"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+              "status": { "enum": ["passed", "failed", "blocked"] },
+              "reason": { "type": ["string", "null"], "maxLength": 500 }
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["screenshots", "uiHierarchy", "logs", "buildManifest"],
+      "properties": {
+        "screenshots": { "type": "array", "items": { "$ref": "#/definitions/artifact" } },
+        "uiHierarchy": { "type": "array", "items": { "$ref": "#/definitions/artifact" } },
+        "logs": { "type": "array", "items": { "$ref": "#/definitions/artifact" } },
+        "buildManifest": { "anyOf": [{ "$ref": "#/definitions/artifact" }, { "type": "null" }] }
+      }
+    },
+    "deviceLockId": { "type": ["string", "null"], "maxLength": 128 },
+    "leaseEvents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["leaseId", "event", "taskId", "agentId", "targetDeviceIdHash", "occurredAt", "expiresAt"],
+        "properties": {
+          "leaseId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "event": { "enum": ["acquired", "heartbeat", "released", "reclaimed"] },
+          "taskId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+          "agentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "targetDeviceIdHash": { "$ref": "#/definitions/sha256" },
+          "occurredAt": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "expiresAt": { "type": ["string", "null"], "maxLength": 64 },
+          "verifiedNoActiveOperation": { "type": "boolean" }
+        },
+        "allOf": [{
+          "if": { "type": "object", "properties": { "event": { "const": "reclaimed" } }, "required": ["event"] },
+          "then": { "type": "object", "required": ["verifiedNoActiveOperation"], "properties": { "verifiedNoActiveOperation": { "const": true } } }
+        }]
+      }
+    },
+    "limitations": { "type": "array", "items": { "type": "string", "maxLength": 500 } },
+    "completedAt": { "type": ["string", "null"], "maxLength": 64 }
+  },
+  "definitions": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    }
+  },
+  "allOf": [{
+    "if": { "type": "object", "properties": { "validation": { "type": "object", "properties": { "status": { "const": "passed" } }, "required": ["status"] } }, "required": ["validation"] },
+    "then": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "object",
+          "properties": {
+            "model": { "type": "string", "minLength": 1 },
+            "osVersion": { "type": "string", "minLength": 1 },
+            "deviceIdHash": { "$ref": "#/definitions/sha256" }
+          }
+        },
+        "tooling": {
+          "type": "object",
+          "properties": {
+            "rokuSdkVersion": { "type": "string", "minLength": 1 },
+            "rkVersion": { "type": "string", "minLength": 1 },
+            "toolCatalogFingerprint": { "$ref": "#/definitions/sha256" }
+          }
+        },
+        "validation": { "type": "object", "properties": { "assertions": { "type": "array", "contains": { "type": "object", "properties": { "status": { "const": "passed" } }, "required": ["status"] } } } },
+        "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+        "deviceLockId": { "type": "string", "minLength": 1 },
+        "leaseEvents": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "type": "object", "properties": { "event": { "const": "acquired" } }, "required": ["event"] } },
+            { "contains": { "type": "object", "properties": { "event": { "const": "released" } }, "required": ["event"] } }
+          ]
+        },
+        "completedAt": { "type": "string", "minLength": 1 }
+      }
+    }
+  }]
+}
