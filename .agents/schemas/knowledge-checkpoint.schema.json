@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "session_id",
+    "task_fingerprint",
+    "task",
+    "repository",
+    "commit",
+    "objective",
+    "completed",
+    "remaining",
+    "decisions",
+    "findings",
+    "files",
+    "validations",
+    "blockers",
+    "next_actions",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^checkpoint-[a-f0-9]{24}$" },
+    "session_id": { "type": "string", "pattern": "^[0-9a-f-]{36}$" },
+    "task_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "task": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "repository": { "type": "string", "minLength": 1 },
+    "commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+    "objective": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "completed": { "$ref": "#/definitions/textList" },
+    "remaining": { "$ref": "#/definitions/textList" },
+    "decisions": { "$ref": "#/definitions/textList" },
+    "findings": { "$ref": "#/definitions/idList" },
+    "files": { "$ref": "#/definitions/textList" },
+    "validations": { "$ref": "#/definitions/textList" },
+    "blockers": { "$ref": "#/definitions/textList" },
+    "next_actions": { "$ref": "#/definitions/textList" },
+    "created_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" }
+  },
+  "definitions": {
+    "textList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 4000 }
+    },
+    "idList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^finding-[a-f0-9]{24}$" }
+    }
+  }
+}

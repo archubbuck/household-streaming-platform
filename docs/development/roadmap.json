@@ -8,7 +8,7 @@
     {
       "id": "M0",
       "title": "AI Engineering Foundation",
-      "outcome": "Mandatory discovery, constrained workflows, deterministic tests, and source-bound evidence.",
+      "outcome": "Mandatory discovery, constrained workflows, deterministic tests, source-bound evidence, and Git-authoritative agent knowledge.",
       "packages": [
         {
           "id": "M0.1",
@@ -93,6 +93,26 @@
           "verification": "passed",
           "dependencies": ["M0.5", "M0.6"],
           "evidence": [{ "path": "scripts/ai/tests/foundation.test.mjs", "note": "Clean committed fixture completes and verifies the workflow." }],
+          "blockers": []
+        },
+        {
+          "id": "M0.8",
+          "title": "Persistent agent knowledge management",
+          "status": "complete",
+          "implementation": "Git-backed records, strict provenance/relationship and content-hash validation, receipt-bound SQLite findings and checkpoints, FTS5 retrieval, review-only proposals, source and record freshness checks, provider-injected semantic/hybrid ranking with a versioned embedding cache, CLI integration, and a deterministic retrieval benchmark are implemented. The default CLI remains lexical without an approved provider, and all promotion remains Git-review-only.",
+          "verification": "passed",
+          "dependencies": ["M0.3", "M0.5", "M0.6"],
+          "evidence": [
+            { "path": ".agents/manifests/knowledge.json", "note": "Registered knowledge capabilities and scoped working-state writes." },
+            { "path": "knowledge/catalog.json", "note": "Git-authoritative records with stable IDs and source provenance." },
+            { "path": "scripts/ai/knowledge/records.mjs", "note": "Validates authoritative records, source freshness, and normalized record-content hashes." },
+            { "path": "scripts/ai/knowledge/retrieval.mjs", "note": "Exact/FTS5 retrieval plus injected-provider semantic and hybrid ranking, cache invalidation, and bounded context." },
+            { "path": "scripts/ai/knowledge/providers/embedding.mjs", "note": "Provider contract, input screening, embedding validation, content hashes, and cosine similarity." },
+            { "path": "scripts/ai/knowledge/store.mjs", "note": "SQLite v2 migration adds model/version/content-keyed embedding persistence." },
+            { "path": "scripts/ai/knowledge/working.mjs", "note": "Receipt-bound provisional capture, proposals and checkpoints." },
+            { "path": "scripts/ai/tests/knowledge.test.mjs", "note": "18 deterministic tests cover migration preservation, negative security and cross-platform path cases, lexical/provider retrieval, source/record freshness, embedding caching/versioning and session boundaries; suite passed on Windows and Linux under Node 24." },
+            { "path": "docs/development/knowledge-management.md", "note": "Architecture, lifecycle, retrieval, benchmarks and limitations." }
+          ],
           "blockers": []
         }
       ]
@@ -334,6 +354,7 @@
     }
   ],
   "nextActions": [
+    { "packageId": "M0.8", "action": "Keep semantic/hybrid CLI activation gated on an approved provider; continue requiring normal Git review for every authoritative knowledge change." },
     { "packageId": "M0-RK-05", "action": "Design and test the narrowest approved device adapter while preserving the inspection-only boundary." },
     { "packageId": "M0-RK-06", "action": "Implement atomic exclusive leases and explicit authorization before exposing device controls." },
     { "packageId": "M0-RK-07", "action": "Add the authorized device-smoke workflow only after adapter and lease enforcement are testable." },

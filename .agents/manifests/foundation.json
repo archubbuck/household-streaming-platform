@@ -37,7 +37,7 @@
       "entrypoint": ".agents/workflows/foundation-check.json", "resources": [".agents/workflows/foundation-check.md"],
       "dependencies": ["workflow-runner", "quality"],
       "applicability": { "always": false, "keywords": ["foundation", "m0", "implement", "validate", "test", "ci", "bootstrap"] }, "owner": "orchestrator",
-      "permissions": { "write": [".artifacts/tasks"] }, "validations": ["registry", "foundation-tests", "roadmap-check", "roadmap-tests"]
+      "permissions": { "write": [".artifacts/tasks"] }, "validations": ["registry", "foundation-tests", "knowledge-tests", "roadmap-check", "roadmap-tests"]
     },
     {
       "id": "workflow-runner", "type": "script", "version": 1,

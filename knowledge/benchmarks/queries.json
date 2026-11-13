@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "top_k": 5,
+  "queries": [
+    {
+      "query": "Where is mandatory agent discovery implemented?",
+      "expected_ids": ["architecture.ai-engineering-harness"],
+      "expected_sources": ["AGENTS.md", "scripts/ai/runner.mjs"]
+    },
+    {
+      "query": "How are session receipts validated?",
+      "expected_ids": ["architecture.ai-engineering-harness"],
+      "expected_sources": ["scripts/ai/runner.mjs", "scripts/ai/tests/foundation.test.mjs"]
+    },
+    {
+      "query": "Which workflow generates verification evidence?",
+      "expected_ids": ["architecture.ai-engineering-harness"],
+      "expected_sources": ["scripts/ai/runner.mjs"]
+    },
+    {
+      "query": "What happens when the capability registry changes?",
+      "expected_ids": ["architecture.ai-engineering-harness"],
+      "expected_sources": ["AGENTS.md", "scripts/ai/runner.mjs"]
+    },
+    {
+      "query": "Which streaming features are planned but not implemented?",
+      "expected_ids": ["architecture.streaming-implementation-boundaries"],
+      "expected_sources": ["household_streaming_platform_specification.md", "apps/experience-api/src/app.ts"]
+    }
+  ]
+}

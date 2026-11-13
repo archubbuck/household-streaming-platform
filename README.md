@@ -8,11 +8,11 @@ production-ready; the browser preview uses it through a local development proxy.
 
 <!-- ROADMAP:START -->
 **Active workstream:** M0-RK — Incremental Roku MCP integration (in progress).
-**Overall roadmap:** 9/39 work packages complete; statuses are tracked per package below.
+**Overall roadmap:** 10/40 work packages complete; statuses are tracked per package below.
 
 | Milestone | State | Package summary |
 |---|---|---|
-| M0 — AI Engineering Foundation | complete | 7 complete, 0 in progress, 0 blocked, 0 not started |
+| M0 — AI Engineering Foundation | complete | 8 complete, 0 in progress, 0 blocked, 0 not started |
 | M0-RK — Incremental Roku MCP integration | in progress | 2 complete, 6 in progress, 2 blocked, 0 not started |
 | M1 — Roku Mock Prototype | blocked | 0 complete, 0 in progress, 3 blocked, 3 not started |
 | M2 — Playable MVP | in progress | 0 complete, 3 in progress, 0 blocked, 3 not started |
@@ -22,6 +22,7 @@ production-ready; the browser preview uses it through a local development proxy.
 **Next product milestone:** M1 — Roku Mock Prototype (blocked).
 
 **Next actions:**
+- **M0.8:** Keep semantic/hybrid CLI activation gated on an approved provider; continue requiring normal Git review for every authoritative knowledge change.
 - **M0-RK-05:** Design and test the narrowest approved device adapter while preserving the inspection-only boundary.
 - **M0-RK-06:** Implement atomic exclusive leases and explicit authorization before exposing device controls.
 - **M0-RK-07:** Add the authorized device-smoke workflow only after adapter and lease enforcement are testable.
@@ -60,7 +61,7 @@ Use the pinned npx prefix in place of `pnpm` if needed. All CLI commands accept 
 | `pnpm ai:discover --task "..."` | Issues a new session receipt; lists instruction paths and missing capabilities |
 | `pnpm ai:explain --capability foundation-check` | Displays a registered capability |
 | `pnpm ai:verify-session --session <id> --task "..."` | Checks signature, task, lifetime and current registry |
-| `pnpm test` | Runs foundation, preview, Roku inspection, and API regression tests using offline fixtures |
+| `pnpm test` | Runs foundation, knowledge, preview, Roku inspection, and API regression tests using offline fixtures |
 | `pnpm roku:mcp:check --session <id> --task "..."` | Read-only installed SDK/context/advertisement inspection; no tool calls or TV access |
 | `pnpm ai:run --workflow roku-mcp-setup --session <id> --task "..." --inputs '{}'` | Signed tooling-inspection evidence, not physical integration acceptance |
 | `pnpm ai:run --workflow foundation-check --session <id> --task "..." --inputs '{}'` | Runs the gated foundation checks and records evidence |
@@ -69,6 +70,26 @@ Use the pinned npx prefix in place of `pnpm` if needed. All CLI commands accept 
 | `pnpm roadmap:write` | Regenerates README and implementation-status summaries from the roadmap |
 
 Exit codes: **0** passed, **1** invalid/failed, **2** completion blocked. An unborn or dirty worktree intentionally exits 2 for the workflow, even when all runnable tests pass. No automatic source commits are made. Read [the foundation runbook](docs/operations/foundation.md) for recovery and trust boundaries.
+
+## Agent knowledge
+
+The Git-managed [knowledge catalog](knowledge/catalog.json) is authoritative;
+findings, proposals, checkpoints, and the rebuildable SQLite/FTS index live
+under ignored `.artifacts/knowledge/`. Search, validate, and maintain local
+state with the existing CLI:
+
+```powershell
+$sessionId = '<current discovery session>'
+$task = '<exact discovered task text>'
+node scripts/ai/cli.mjs knowledge --action search --session $sessionId --task $task --payload '{"query":"session receipts","limit":5,"mode":"auto"}'
+node scripts/ai/cli.mjs knowledge --action validate
+node scripts/ai/cli.mjs knowledge --action benchmark --session $sessionId --task $task
+```
+
+Capture and checkpoint commands require the current discovery session and the
+exact task text. Proposals remain pending for normal Git review; no command
+automatically promotes them. See the [KMS guide](docs/development/knowledge-management.md)
+and [maintenance runbook](docs/operations/knowledge-maintenance.md).
 
 ## Browser preview and Experience API
 

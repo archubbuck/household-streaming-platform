@@ -22,17 +22,20 @@ function git(root, ...args) {
 function fixture(t, { committed = false, testBody } = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'household-m0-'));
   t.after(() => rmSync(root, { recursive: true, force: true, maxRetries: 3 }));
-  for (const entry of ['.agents', '.github', '.vscode', 'apps', 'scripts', 'docs', 'README.md', 'AGENTS.md', '.mcp.json', 'household_streaming_platform_specification.md', '.gitignore', '.gitattributes', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
+  for (const entry of ['.agents', '.github', '.vscode', 'apps', 'scripts', 'docs', 'knowledge', 'README.md', 'AGENTS.md', '.mcp.json', 'household_streaming_platform_specification.md', '.gitignore', '.gitattributes', '.npmrc', 'package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
     if (existsSync(path.join(source, entry))) cpSync(path.join(source, entry), path.join(root, entry), { recursive: true });
   }
+  const dependencies = path.join(source, 'node_modules/.pnpm/ajv@8.20.0/node_modules');
   for (const dependency of ['ajv', 'fast-deep-equal', 'fast-uri', 'json-schema-traverse', 'require-from-string']) {
     const target = path.join(root, 'node_modules', dependency);
     mkdirSync(path.dirname(target), { recursive: true });
-    cpSync(path.join(source, 'node_modules', dependency), target, { recursive: true, dereference: true });
+    cpSync(path.join(dependencies, dependency), target, { recursive: true, dereference: true });
   }
   // The runner integration uses a small isolated test, not recursive execution of this suite.
   writeFileSync(path.join(root, 'scripts/ai/tests/foundation.test.mjs'), testBody ??
     "import test from 'node:test'; import assert from 'node:assert/strict'; test('fixture check', () => assert.equal(2 + 2, 4));\n");
+  writeFileSync(path.join(root, 'scripts/ai/tests/knowledge.test.mjs'),
+    "import test from 'node:test'; test('fixture knowledge check', () => {});\n");
   writeFileSync(path.join(root, 'scripts/roku/tests/inspection.test.mjs'),
     "import test from 'node:test'; test('fixture Roku offline check', () => {});\n");
   git(root, 'init', '--quiet');

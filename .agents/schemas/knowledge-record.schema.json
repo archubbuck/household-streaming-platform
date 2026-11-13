@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "type",
+    "status",
+    "scope",
+    "provenance",
+    "verification",
+    "created_at",
+    "updated_at",
+    "relationships",
+    "tags"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "type": {
+      "enum": [
+        "architecture",
+        "domain",
+        "decision",
+        "integration",
+        "infrastructure",
+        "runbook",
+        "business-rule",
+        "verified-finding",
+        "repository-map"
+      ]
+    },
+    "status": { "enum": ["proposed", "verified", "stale", "superseded", "deprecated"] },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "domain"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string", "minLength": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_files", "evidence"],
+      "properties": {
+        "source_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "symbol": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "ref"],
+            "properties": {
+              "kind": { "enum": ["file", "test", "commit", "decision", "external"] },
+              "ref": { "type": "string", "minLength": 1 },
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "verified_at", "verified_commit", "content_hash"],
+      "properties": {
+        "method": { "enum": ["none", "code", "code-and-test", "review", "external-source"] },
+        "verified_at": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+        "verified_commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+        "content_hash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "created_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+    "updated_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "depends_on",
+        "consumes",
+        "produces",
+        "implements",
+        "documents",
+        "supersedes",
+        "related_to",
+        "owned_by"
+      ],
+      "properties": {
+        "depends_on": { "$ref": "#/definitions/ids" },
+        "consumes": { "$ref": "#/definitions/ids" },
+        "produces": { "$ref": "#/definitions/ids" },
+        "implements": { "$ref": "#/definitions/ids" },
+        "documents": { "$ref": "#/definitions/ids" },
+        "supersedes": { "$ref": "#/definitions/ids" },
+        "related_to": { "$ref": "#/definitions/ids" },
+        "owned_by": { "$ref": "#/definitions/ids" }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "definitions": {
+    "ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "verified" } }, "required": ["status"] },
+      "then": {
+        "type": "object",
+        "properties": {
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "source_files": { "type": "array", "minItems": 1 },
+              "evidence": { "type": "array", "minItems": 1 }
+            }
+          },
+          "verification": {
+            "type": "object",
+            "properties": {
+              "method": { "enum": ["code", "code-and-test", "review", "external-source"] },
+              "verified_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" },
+              "verified_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+              "content_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

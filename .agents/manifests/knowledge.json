@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "capabilities": [
+    {
+      "id": "knowledge-engineer",
+      "type": "agent",
+      "version": 1,
+      "description": "Own Git-authoritative engineering knowledge, provisional memory, provenance, retrieval and checkpoints.",
+      "tags": ["knowledge", "architecture", "continuity"],
+      "entrypoint": ".agents/agents/specialists.md",
+      "resources": [],
+      "dependencies": ["core-behaviors"],
+      "applicability": { "always": false, "keywords": ["knowledge", "knowledge management", "session memory"] },
+      "owner": "knowledge-engineer",
+      "permissions": { "write": [] },
+      "validations": ["registry"]
+    },
+    {
+      "id": "knowledge-authority",
+      "type": "script",
+      "version": 1,
+      "description": "Validate Git-managed knowledge records, evidence, stable identifiers, relationships and source freshness.",
+      "tags": ["knowledge", "schema", "provenance"],
+      "entrypoint": "scripts/ai/knowledge/records.mjs",
+      "resources": [
+        ".agents/schemas/knowledge-record.schema.json",
+        ".agents/schemas/knowledge-catalog.schema.json",
+        "knowledge/catalog.json",
+        "knowledge/architecture/ai-engineering-harness.md",
+        "knowledge/architecture/streaming-implementation-boundaries.md"
+      ],
+      "dependencies": ["knowledge-engineer", "capability-schema"],
+      "applicability": { "always": false, "keywords": ["knowledge", "provenance", "authoritative records"] },
+      "owner": "knowledge-engineer",
+      "permissions": { "write": [] },
+      "validations": ["registry", "knowledge-tests"]
+    },
+    {
+      "id": "knowledge-working-memory",
+      "type": "script",
+      "version": 1,
+      "description": "Persist receipt-bound provisional findings and review-only proposals in local SQLite working state.",
+      "tags": ["knowledge", "sqlite", "capture"],
+      "entrypoint": "scripts/ai/knowledge/working.mjs",
+      "resources": [
+        "scripts/ai/knowledge/store.mjs",
+        ".agents/schemas/knowledge-finding.schema.json",
+        ".agents/schemas/knowledge-checkpoint.schema.json"
+      ],
+      "dependencies": ["knowledge-authority", "discovery"],
+      "applicability": { "always": false, "keywords": ["capture knowledge", "provisional findings", "knowledge proposal"] },
+      "owner": "knowledge-engineer",
+      "permissions": { "write": [".artifacts/knowledge"] },
+      "validations": ["registry", "knowledge-tests"]
+    },
+    {
+      "id": "knowledge-retrieval",
+      "type": "script",
+      "version": 1,
+      "description": "Provide deterministic exact and FTS5 retrieval, relationship traversal, source freshness and bounded context assembly.",
+      "tags": ["knowledge", "search", "fts5"],
+      "entrypoint": "scripts/ai/knowledge/retrieval.mjs",
+      "resources": ["scripts/ai/knowledge/providers/embedding.mjs"],
+      "dependencies": ["knowledge-authority", "knowledge-working-memory"],
+      "applicability": { "always": false, "keywords": ["knowledge search", "knowledge retrieval", "knowledge context"] },
+      "owner": "knowledge-engineer",
+      "permissions": { "write": [".artifacts/knowledge"] },
+      "validations": ["registry", "knowledge-tests"]
+    },
+    {
+      "id": "knowledge-session-state",
+      "type": "script",
+      "version": 1,
+      "description": "Create, restore and chronologically summarize task checkpoints without replacing fresh discovery.",
+      "tags": ["knowledge", "checkpoint", "session"],
+      "entrypoint": "scripts/ai/knowledge/working.mjs",
+      "resources": [".agents/schemas/knowledge-checkpoint.schema.json"],
+      "dependencies": ["knowledge-working-memory", "discovery"],
+      "applicability": { "always": false, "keywords": ["knowledge checkpoint", "restore session", "session continuity"] },
+      "owner": "knowledge-engineer",
+      "permissions": { "write": [".artifacts/knowledge"] },
+      "validations": ["registry", "knowledge-tests"]
+    },
+    {
+      "id": "knowledge-evaluation",
+      "type": "script",
+      "version": 1,
+      "description": "Measure deterministic exact/full-text retrieval on a fixed repository-fact benchmark.",
+      "tags": ["knowledge", "benchmark", "evaluation"],
+      "entrypoint": "scripts/ai/knowledge/evaluation.mjs",
+      "resources": ["knowledge/benchmarks/queries.json"],
+      "dependencies": ["knowledge-retrieval"],
+      "applicability": { "always": false, "keywords": ["knowledge benchmark", "evaluate knowledge retrieval"] },
+      "owner": "knowledge-engineer",
+      "permissions": { "write": [".artifacts/knowledge"] },
+      "validations": ["registry", "knowledge-tests"]
+    },
+    {
+      "id": "knowledge-tests",
+      "type": "script",
+      "version": 1,
+      "description": "Deterministic regression coverage for knowledge records, working state, retrieval, freshness and checkpoints.",
+      "tags": ["knowledge", "testing", "regression"],
+      "entrypoint": "scripts/ai/tests/knowledge.test.mjs",
+      "resources": [],
+      "dependencies": ["knowledge-session-state", "knowledge-retrieval", "knowledge-evaluation"],
+      "applicability": { "always": false, "keywords": ["knowledge", "knowledge tests"] },
+      "owner": "quality",
+      "permissions": { "write": [] },
+      "validations": ["registry", "knowledge-tests"]
+    },
+    {
+      "id": "knowledge-management",
+      "type": "skill",
+      "version": 1,
+      "description": "Repository instructions for authoritative knowledge, provisional findings, search, proposals and session continuity.",
+      "tags": ["knowledge", "instructions", "workflow"],
+      "entrypoint": ".agents/skills/knowledge-management/SKILL.md",
+      "resources": [
+        "docs/development/knowledge-management.md",
+        "docs/operations/knowledge-maintenance.md",
+        "knowledge/benchmarks/queries.json"
+      ],
+      "dependencies": ["knowledge-authority", "knowledge-working-memory", "knowledge-retrieval", "knowledge-session-state", "knowledge-evaluation"],
+      "applicability": { "always": false, "keywords": ["knowledge", "persistent memory", "agent continuity"] },
+      "owner": "knowledge-engineer",
+      "permissions": { "write": [] },
+      "validations": ["registry", "knowledge-tests"]
+    }
+  ]
+}

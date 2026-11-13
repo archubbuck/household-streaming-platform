@@ -5,9 +5,10 @@
   "steps": [
     { "id": "registry", "action": "script", "command": "registry" },
     { "id": "foundation-tests", "action": "script", "command": "foundation-tests" },
+    { "id": "knowledge-tests", "action": "script", "command": "knowledge-tests" },
     { "id": "roadmap-check", "action": "script", "command": "roadmap-check" },
     { "id": "roadmap-tests", "action": "script", "command": "roadmap-tests" },
     { "id": "roku-tests", "action": "script", "command": "roku-tests" }
   ],
-  "completion": { "require": ["registry", "foundation-tests", "roadmap-check", "roadmap-tests", "roku-tests", "source-unchanged", "commit-bound"] }
+  "completion": { "require": ["registry", "foundation-tests", "knowledge-tests", "roadmap-check", "roadmap-tests", "roku-tests", "source-unchanged", "commit-bound"] }
 }

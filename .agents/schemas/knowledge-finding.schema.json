@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["classification", "title", "details", "source_refs", "related_knowledge"],
+  "properties": {
+    "classification": {
+      "enum": [
+        "observation",
+        "hypothesis",
+        "verified-finding",
+        "decision-candidate",
+        "documentation-discrepancy",
+        "operational-lesson",
+        "unresolved-question"
+      ]
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "details": { "type": "string", "minLength": 1, "maxLength": 12000 },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "line": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    },
+    "related_knowledge": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$" }
+    }
+  }
+}

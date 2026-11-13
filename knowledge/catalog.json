@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "repository": "household-streaming-platform",
+  "records": [
+    {
+      "id": "architecture.ai-engineering-harness",
+      "path": "knowledge/architecture/ai-engineering-harness.md"
+    },
+    {
+      "id": "architecture.streaming-implementation-boundaries",
+      "path": "knowledge/architecture/streaming-implementation-boundaries.md"
+    }
+  ]
+}
